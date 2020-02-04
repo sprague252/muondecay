@@ -3,7 +3,7 @@
 # TeachSpin muon decay apparatus. Enter muon_detect --help on the
 # command line for more information.
 import argparse
-from Muon import detect
+from Muon.detect import detect
 import sys
 
 parser = argparse.ArgumentParser(description = 
@@ -15,9 +15,9 @@ parser.add_argument('-n', '--ndecays', type=int, default=0,
 parser.add_argument('-a', '--append', action='store_true',
     help='append data to the output file if it exists\n' +
     '(otherwise the file is overwritten)')
-parser.add_argument('-o', '--outfile', nargs=1, default='muon_data.txt',
+parser.add_argument('-o', '--outfile', default='muon_data.txt',
     help='name of the output file (default: muon_data.txt)')
-parser.add_argument('port', nargs=1, 
+parser.add_argument('port', 
     help='serial port (device) connected to the muon detector')
 args = parser.parse_args()
 
@@ -25,6 +25,12 @@ if args.append:
     fmode = 'a'
 else:
     fmode = 'w'
+
+print('port: ', args.port)
+print('sampletime: ', args.sampletime)
+print('ndecays: ', args.ndecays)
+print('outfile: ', args.outfile)
+
 
 muon_count, decay_count, etime = detect(args.port, outfile=args.outfile, fmode=fmode,
     sampletime=args.sampletime, ndecays=args.ndecays)
