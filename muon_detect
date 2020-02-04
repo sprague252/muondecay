@@ -1,0 +1,35 @@
+#!/usr/bin/env python
+# muon_detect - a command-line utility to acquire data from the
+# TeachSpin muon decay apparatus. Enter muon_detect --help on the
+# command line for more information.
+import argparse
+from Muon import detect
+import sys
+
+parser = argparse.ArgumentParser(description = 
+    ('Acquire data from the TeachSpin muon decay apparatus using Muon.detect.'))
+parser.add_argument('-t', '--sampletime', type=int, default=0, 
+    help='Clock time (seconds) for which the data should be collected (0 for no limit)')
+parser.add_argument('-n', '--ndecays', type=int, default=0, 
+    help='target number of muon decays (0 for no target)')
+parser.add_argument('-a', '--append', action='store_true',
+    help='append data to the output file if it exists\n' +
+    '(otherwise the file is overwritten)')
+parser.add_argument('-o', '--outfile', nargs=1, default='muon_data.txt',
+    help='name of the output file (default: muon_data.txt)')
+parser.add_argument('port', nargs=1, 
+    help='serial port (device) connected to the muon detector')
+args = parser.parse_args()
+
+if args.append:
+    fmode = 'a'
+else:
+    fmode = 'w'
+
+muon_count, decay_count, etime = detect(args.port, outfile=args.outfile, fmode=fmode,
+    sampletime=args.sampletime, ndecays=args.ndecays)
+print(muon_count, ' muons detected', file=sys.stderr)
+print(decay_count, ' decays detected', file=sys.stderr)
+print(etime, ' s sampling time', file=sys.stderr)
+
+sys.exit(0)
