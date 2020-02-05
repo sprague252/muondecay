@@ -41,7 +41,7 @@ def detect(port, outfile='muondata.txt', fmode='w', sampletime=0, ndecays=0,
                 rdf = open('rawdata_error' + str(int(tstamp)), 'bw')
                 rdf.write(rawdata)
                 rdf.close()
-                print('rawdata written to file rawdata_error' + str(int(tstamp))',
+                print('rawdata written to file rawdata_error' + str(int(tstamp)),
                     file=sys.stderr)
                 print('Data not saved ...', file=sys.stderr)
             data_ns = np.array([20 * int(n, 16) for n in data0x])
