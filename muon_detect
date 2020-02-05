@@ -26,12 +26,6 @@ if args.append:
 else:
     fmode = 'w'
 
-print('port: ', args.port)
-print('sampletime: ', args.sampletime)
-print('ndecays: ', args.ndecays)
-print('outfile: ', args.outfile)
-
-
 muon_count, decay_count, etime = detect(args.port, outfile=args.outfile, fmode=fmode,
     sampletime=args.sampletime, ndecays=args.ndecays)
 print(muon_count, ' muons detected', file=sys.stderr)
