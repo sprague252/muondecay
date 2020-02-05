@@ -6,6 +6,7 @@ def detect(port, outfile='muondata.txt', fmode='w', sampletime=0, ndecays=0,
     import re
     import serial
     import time
+    import sys
     if ndecays == 0:
         ndecays = 1000000 # Default maximum number of decays
     if sampletime == 0:
@@ -33,7 +34,16 @@ def detect(port, outfile='muondata.txt', fmode='w', sampletime=0, ndecays=0,
                 b'', 
                 re.sub(ex_3_digit, b'', rawdata)
             )
-            data0x = np.frombuffer(datab, dtype='|S3')
+            try:
+                data0x = np.frombuffer(datab, dtype='|S3')
+            except ValueError:
+                print('ValueError occurred reading |S3 ...', file=sys.stderr)
+                rdf = open('rawdata_error' + str(int(tstamp)), 'bw')
+                rdf.write(rawdata)
+                rdf.close()
+                print('rawdata written to file rawdata_error' + str(int(tstamp))',
+                    file=sys.stderr)
+                print('Data not saved ...', file=sys.stderr)
             data_ns = np.array([20 * int(n, 16) for n in data0x])
             muon_count += data_ns.size
             decay_count += data_ns[data_ns < 20000].size
