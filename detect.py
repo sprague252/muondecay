@@ -1,17 +1,69 @@
+#!/usr/bin/env python
+"""This module provides the detect function to detect muon decays with
+TeachSpin's muon decay apparatus.  The module may be called from the
+command line by name with "detect.py [args]" or with "python -m
+Muon.detect [args]". The detect function can be called from within
+Python. Execute "detect.py --help" from the command line for a complete
+help message with command-line arguments or "help(detect.detect)" from
+within IPython (Jupyter) for a complete docstring of the detect
+function.
+"""
 from __future__ import division, print_function
 
-def detect(port, outfile='muondata.txt', fmode='w', sampletime=0, ndecays=0, 
-    killswitch=None):
+def detect(port, outfile='muondata.txt', appnd=False, sampletime=0,
+    ndecays=0, killswitch=None):
+    """Capture the output from TeachSpin's muon decay apparatus and save
+    the results to an output file with the same format as the original
+    'muon_detect.tcl' program provided by TeachSpin.
+    
+    USAGE
+    
+    muon_count, decay_count, etime = detect(port,
+        outfile='muondata.txt', fmode='w', sampletime=0, ndecays=0,
+        killswitch=None)
+
+    PARAMETERS
+    
+    port: serial port (device) connected to the muon detector
+    outfile: name of the output file (default: muon_data.txt)
+    appnd: append data to the output file if it exists (otherwise the
+        file is overwritten)
+    sampletime: Clock time (seconds) for which the data should be
+        collected. A value of 0 results in a limit of 1 week (604800 s).
+        (default: 0)
+    ndecays: target number of muon decays (0 for no target). Program
+        ends once the target is met or exceeded. (default: 0)
+    killswitch: a parameter to stop execution. If defined as a
+        multiprocessing.Value object, setting of killswitch.value = 0 in
+        another process will stop execution. This parameter is ignored
+        if killswitch is None. (default: None)
+    
+    RETURNS
+    
+    muon_count: total number of muons passing through the detector
+        during execution. Note that if the data are appended to a file,
+        the file may contain additional muon counts.
+    decay_count: total number of muons decays detected during execution.
+        Note that if the data are appended to a file, the file may
+        contain additional muon decays.
+    etime: The total sampling time during execution. Note that if the
+        data are appended to a file, this time does not include the time
+        for any previous samples.
+    """
     import numpy as np
     import re
     import serial
     import time
     import sys
     from os import fsync
+    if appnd:
+        fmode = 'a'
+    else:
+        fmode = 'w'
     if ndecays == 0:
         ndecays = 1000000 # Default maximum number of decays
     if sampletime == 0:
-        sampletime = 14 * 24 * 3600 # Default maximum sample time 2 weeks
+        sampletime = 7 * 24 * 3600 # Default maximum sample time 1 week
     reading = True
     decay_count = 0
     muon_count = 0
@@ -83,3 +135,37 @@ def detect(port, outfile='muondata.txt', fmode='w', sampletime=0, ndecays=0,
                 if killswitch.value == False:
                     reading = False
     return muon_count, decay_count, etime
+
+
+if __name__ == '__main__':
+    import argparse
+    import sys
+    parser = argparse.ArgumentParser(description = 
+        ('Acquire data from the TeachSpin muon decay apparatus.'))
+    parser.add_argument('-a', '--append', action='store_true',
+        help='append data to the output file if it exists ' +
+        '(otherwise the file is overwritten)')
+    parser.add_argument('-n', '--ndecays', type=int, default=0, 
+        help='target number of muon decays (0 for no target)')
+    parser.add_argument('-o', '--outfile', default='muon_data.txt',
+        help='name of the output file (default: muon_data.txt)')
+    parser.add_argument('-s', '--summarize', action='store_true',
+        help='at completion print a summary of the total muons detected, ' +
+        'decays detected and sampling time to STDOUT')
+    parser.add_argument('-t', '--sampletime', type=int, default=0, 
+        help='Clock time (seconds) for which the data should be collected ' +
+        '(0 for default limit, 1 week)')
+    parser.add_argument('port', 
+        help='serial port (device) connected to the muon detector')
+    args = parser.parse_args()
+
+    muon_count, decay_count, etime = detect(args.port,
+        outfile=args.outfile, appnd=args.append,
+        sampletime=args.sampletime, ndecays=args.ndecays)
+    
+    if args.summarize:
+        print('Muons detected: ', muon_count)
+        print('Decays detected: ', decay_count)
+        print('Sampling time (s): ', etime)
+
+    sys.exit(0)
