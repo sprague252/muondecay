@@ -7,6 +7,7 @@ def detect(port, outfile='muondata.txt', fmode='w', sampletime=0, ndecays=0,
     import serial
     import time
     import sys
+    from os import fsync
     if ndecays == 0:
         ndecays = 1000000 # Default maximum number of decays
     if sampletime == 0:
@@ -73,6 +74,8 @@ def detect(port, outfile='muondata.txt', fmode='w', sampletime=0, ndecays=0,
             data_out = (np.concatenate(([data_ns], 
                 [tstamp * np.ones(data_ns.size, dtype=np.int)]), axis=0).T)
             np.savetxt(output, data_out, fmt='%d')
+            output.flush()
+            fsync(output.fileno())
             etime = tstamp - t0
             if decay_count >= ndecays or etime >= sampletime:
                 reading = False
