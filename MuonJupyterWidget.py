@@ -153,6 +153,11 @@ def detect_monitor(fname='muon_data.txt', hgrange=[0, 20]):
         ax.set_xlabel(r'Time ($\mu$s)')
         ax.set_ylabel('Counts')
         ax.set_xlim([0, 20])
+#        clear_output(wait=True)
+#        update_display(display_id='decay plot', obj=fig)
+        plt.pause(0.0001)
+        clear_output(wait=True)
+
         #       fig.canvas.draw()
         #plt.draw()
         #plt.pause(0.0001)
@@ -164,7 +169,7 @@ def detect_monitor(fname='muon_data.txt', hgrange=[0, 20]):
     
     global running
     running = True
-    plt.ion()
+#    plt.ion()
 #    plt.ioff()
 #    out = widgets.Output()
     times = np.array([])
@@ -179,10 +184,11 @@ def detect_monitor(fname='muon_data.txt', hgrange=[0, 20]):
             else:
                 partial = line
         fig, ax = plt.subplots()
+#        display(fig, display_id='decay plot')
         hgplot(fig, ax, times)
         datalines = follow(datafile)
- #       display(fig, display_id='decay plot')
-        plt.pause(0.0001)
+#         update_display(display_id='decay plot', obj=fig)
+#         plt.pause(0.0001)
         clear_output(wait=True)
 #        out.clear_output(wait=True)
         for line in datalines:
@@ -199,8 +205,8 @@ def detect_monitor(fname='muon_data.txt', hgrange=[0, 20]):
 #                    fig.canvas.draw_idle()
 #                    out.clear_output()
 #                    out.append_display_data(fig)
-                    plt.pause(0.0001)
-                    clear_output(wait=True)
+#                     plt.pause(0.0001)
+#                     clear_output(wait=True)
 #                    out.clear_output(wait=True)
             else:
                 partial = line
