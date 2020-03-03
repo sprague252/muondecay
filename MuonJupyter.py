@@ -1,9 +1,9 @@
+from __future__ import print_function, division
 import os
 import ipywidgets as widgets
 from serial.tools.list_ports import comports
 import numpy as np
 import matplotlib.pyplot as plt
-from IPython.display import display
 import tkinter.filedialog as filedialog
 import tkinter as tk
 from platform import system as platform
@@ -113,3 +113,98 @@ def getports():
     for port in ports:
         devs = devs + [port.device]
     return devs
+
+def deltaports():
+    devs0 = getports()
+    print('Serial ports scanned ...')
+    input('Connect new device. Then press any key ...')
+    devs1 = getports()
+    newdev = np.setdiff1d(devs1, devs0)
+    return newdev.tolist()
+
+def detect_spawn(port, outfile='muondata.txt', appnd=False, sampletime=0,
+    ndecays=0):
+    from subprocess import Popen, STDOUT
+    if appnd:
+        proc = Popen(['python', '-m', 'Muon.detect', '-a', '-n',
+            str(ndecays), '-t', str(sampletime), '-o', outfile, port])
+    else:
+        proc = Popen(['python', '-m', 'Muon.detect', '-n', str(ndecays),
+            '-t', str(sampletime), '-o', outfile, port])
+    return proc
+
+def detect_monitor(fname='muon_data.txt', hgrange=[0, 20], mtime=60.):
+    import matplotlib.pyplot as plt
+    from IPython.display import display, clear_output
+    import time
+    from matplotlib.widgets import Button
+    
+    def follow(thefile, nnloop=600):
+    #    thefile.seek(0,2)
+        nloop = 0
+        while nloop < nnloop:
+            line = thefile.readline()
+            if not line:
+                time.sleep(0.1)
+                nloop += 1
+                continue
+            yield line
+        line = '-999'
+        yield line
+    
+    def hgplot(fig, ax, times, clearout=True):
+        hist, bin_edge, _ = ax.hist(times, bins = 20, range = hgrange, 
+           edgecolor='black', facecolor='0.85')
+        ax.set_xlabel(r'Time ($\mu$s)')
+        ax.set_ylabel('Counts')
+        ax.set_xlim([0, 20])
+        #       fig.canvas.draw()
+        plt.draw()
+        plt.pause(0.0001)
+        if clearout: 
+            clear_output(wait=True)
+    
+    global running
+    running = True
+    plt.ion()
+    times = np.array([])
+    with open(fname, "r") as datafile:
+        partial = ''
+        for line in datafile:
+            if line[-1] == '\n':
+                data = np.fromstring(partial + line, sep=' ')
+                partial = ''
+                if int(data[0]) < 40000:
+                    times = np.append(times, [int(data[0])/1000.])
+            else:
+                partial = line
+        fig, ax = plt.subplots()
+        hgplot(fig, ax, times)
+#         bax = plt.axes([0.8, -0.05, 0.1, 0.075])
+#         plt.draw()
+#         plt.pause(0.0001)
+#         clear_output(wait=True)
+        datalines = follow(datafile, nnloop=10*mtime)
+        for line in datalines:
+            if line == '-999':
+                fig, ax = plt.subplots()
+                hgplot(fig, ax, times, clearout=False)
+                print('Monitor period {:g} s ended.'.format(mtime) +
+                    '  Run again to continue monitoring.')
+                return times
+            if line[-1] == '\n':
+                data = np.fromstring(partial + line, sep=' ')
+                partial = ''
+                if int(data[0]) < 40000:
+                    times = np.append(times, [int(data[0])/1000.])
+#                     clear_output()
+                    fig, ax = plt.subplots()
+                    hgplot(fig, ax, times)
+#                     bax = plt.axes([0.8, -0.05, 0.1, 0.075])
+#                     stopit = Button(bax, 'Stop')
+#                     stopit.on_clicked(killit)
+#                     plt.draw()
+#                     plt.pause(0.0001)
+#                     clear_output(wait=True)
+            else:
+                partial = line
