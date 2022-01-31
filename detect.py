@@ -103,8 +103,8 @@ def detect(port, outfile='muondata.txt', appnd=False, sampletime=0,
             timeouts = np.flip(np.argwhere(data_ns==20000).flatten())
             prev = timeouts[0]
             count = 1
-            indlist = np.array([], dtype=np.int)
-            countlist = np.array([], dtype=np.int)
+            indlist = np.array([], dtype=np.int64)
+            countlist = np.array([], dtype=np.int64)
             for val in timeouts[1:]:
                 if val == prev - 1:
                     count += 1
@@ -124,7 +124,7 @@ def detect(port, outfile='muondata.txt', appnd=False, sampletime=0,
             data_ns[indlist] = countlist
             data_ns = data_ns[data_ns != 20000]
             data_out = (np.concatenate(([data_ns], 
-                [tstamp * np.ones(data_ns.size, dtype=np.int)]), axis=0).T)
+                [tstamp * np.ones(data_ns.size, dtype=np.int64)]), axis=0).T)
             np.savetxt(output, data_out, fmt='%d')
             output.flush()
             fsync(output.fileno())
