@@ -15,6 +15,13 @@ def muon_GUI():
     #import tk.messagebox
     import subprocess
     from serial.tools.list_ports import comports
+    
+    global config_win
+    global outfname
+    global device
+    global plot_win
+    global nbins_choice
+    global fitmethod    
 
     class Param:
 
@@ -51,7 +58,7 @@ def muon_GUI():
                     self.entry.grid(row=row, column=1, columnspan=2,
                         sticky=tk.E)
             
-    def open_window():
+    def open_config_window():
         global config_win
         global outfname
         global device
@@ -64,7 +71,7 @@ def muon_GUI():
                 config_win.focus()
         except:
             config_win = tk.Toplevel()
-            config_win.title("Configuration")
+            config_win.title("Output File Configuration")
             port_frame = tk.LabelFrame(config_win, text="Select " +
                 "Port", foreground="black")
             port_frame.pack()
@@ -91,6 +98,42 @@ def muon_GUI():
                 foreground="black", command=config_win.destroy)
             ok_button.pack()       
 
+    def open_plot_window():
+        global plot_win
+        global nbins
+        global fitmethod
+        try:
+            if plot_win.state() == 'normal':
+                plot_win.focus()
+        except:
+            plot_win = tk.Toplevel()
+            plot_win.title("Plot Configuration")
+            bins_frame = tk.LabelFrame(plot_win, text="Number " +
+                "of Histogram Bins", foreground="black")
+            bins_frame.pack()
+            for nb in ["5", "10", "20"]:
+                nb_rbutton = tk.Radiobutton(bins_frame, text=nb, 
+                    foreground="black", variable=nbins_choice, value=nb)
+                nb_rbutton.pack(anchor=tk.W)
+            # Add an other value choice with value -1.
+            nb_rbutton = tk.Radiobutton(bins_frame, text="Other Value", 
+                    foreground="black", variable=nbins_choice, value="-1")
+            nb_rbutton.pack(anchor=tk.W)
+            fit_frame = tk.LabelFrame(plot_win, text="Fit " +
+                "Method", foreground="black")
+            fit_frame.pack()
+            fit_rbutton = tk.Radiobutton(fit_frame, text="Nonlinear fit", 
+                    foreground="black", variable=fitmethod, value="0")
+            fit_rbutton.pack(anchor=tk.W)
+            fit_rbutton = tk.Radiobutton(fit_frame, 
+                text="Background subtract", foreground="black",
+                variable=fitmethod, value="1")
+            fit_rbutton.pack(anchor=tk.W)
+            ok_button = tk.Button(plot_win, text="OK",
+                foreground="black", command=plot_win.destroy)
+            ok_button.pack()       
+
+
     def outfile_dialog():
         import tkinter.filedialog as filedialog
         import os      
@@ -114,44 +157,57 @@ def muon_GUI():
 
     master = tk.Tk()
     master.title('Muon Data Collection')
+    
+    outfname = tk.StringVar()
+    outfname.set('muon_data.txt')
+    device = tk.StringVar()
+    device.set("/dev/null")
+    nbins_choice = tk.StringVar()
+    nbins_choice.set('20')
+    fitmethod = tk.StringVar()
+    fitmethod.set('0')
 
     left_frame = tk.Frame(master)
     left_frame.grid(row=0, column=0,sticky=tk.NW)
     right_frame = tk.Frame(master)
     right_frame.grid(row=0, column=1,sticky=tk.NW)
 
-    global device, outfname
-    outfname = tk.StringVar()
-    outfname.set('muon_data.txt')
-    device = tk.StringVar()
-    device.set("/dev/null")
 
 
     control_frame = tk.LabelFrame(left_frame, text="Control",
         foreground="black", padx=75)
     control_frame.grid(row=0, column=0, sticky=tk.W+tk.E+tk.N)
-    config_button = tk.Button(control_frame,  text="Configure",
+    config_button = tk.Button(control_frame,  text="Configure File",
         width=10, foreground="black")
-    config_button['command'] = open_window
+    config_button['command'] = open_config_window
     config_button.grid(row=0, column=0, sticky=tk.W+tk.E+tk.N+tk.S)
     config_button.columnconfigure(0, weight=1)
     config_button.rowconfigure(0, weight=1)
+
+    plot_config_button = tk.Button(control_frame,  text="Configure Plot",
+        width=10, foreground="black")
+    plot_config_button['command'] = open_plot_window
+    plot_config_button.grid(row=1, column=0, sticky=tk.W+tk.E+tk.N+tk.S)
+    plot_config_button.columnconfigure(0, weight=1)
+    plot_config_button.rowconfigure(1, weight=1)
+
+
     start_button = tk.Button(control_frame, text="Start", width=10,
         foreground="black")
-    start_button.grid(row=1, column=0, sticky=tk.W+tk.E+tk.N)
+    start_button.grid(row=2, column=0, sticky=tk.W+tk.E+tk.N)
     pause_button = tk.Button(control_frame, text="Pause", width=10,
         foreground="black")
-    pause_button.grid(row=2, column=0, sticky=tk.W+tk.E+tk.N)
+    pause_button.grid(row=3, column=0, sticky=tk.W+tk.E+tk.N)
     fit_button = tk.Button(control_frame, text="Fit", width=10,
         foreground="black")
-    fit_button.grid(row=3, column=0, sticky=tk.W+tk.E+tk.N)
+    fit_button.grid(row=4, column=0, sticky=tk.W+tk.E+tk.N)
     rawdata_button = tk.Button(control_frame, text="View Raw Data",
         width=10, foreground="black")
-    rawdata_button.grid(row=4, column=0, sticky=tk.W+tk.E+tk.N)
+    rawdata_button.grid(row=5, column=0, sticky=tk.W+tk.E+tk.N)
     quit_button = tk.Button(control_frame, text="Quit", width=10, 
         foreground="red")
     quit_button['command'] = quit_dialog
-    quit_button.grid(row=5, column=0, sticky=tk.W+tk.E+tk.N)
+    quit_button.grid(row=6, column=0, sticky=tk.W+tk.E+tk.N)
 
     monitor_frame = tk.LabelFrame(left_frame, text="Monitor",
         foreground="black", padx=75, pady=5)
