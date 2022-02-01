@@ -6,7 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import tkinter.filedialog as filedialog
 import tkinter as tk
-from platform import system as platform
+from platform import system as sys
 
 
 class controlpanel:
