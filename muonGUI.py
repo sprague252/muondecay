@@ -13,15 +13,17 @@ def muon_GUI():
     import re
     import scipy.interpolate as interp
     #import tk.messagebox
-    import subprocess
+    #import subprocess
+    from multiprocessing import Process, Value, Array
+    from detect import detectGUI
     from serial.tools.list_ports import comports
     
-    global config_win
-    global outfname
-    global device
-    global plot_win
-    global nbins_choice
-    global fitmethod    
+#     global outfname
+#     global appnd
+#     global device
+#     global plot_win
+#     global nbins_choice
+#     global fitmethod
 
     class Param:
 
@@ -58,10 +60,8 @@ def muon_GUI():
                     self.entry.grid(row=row, column=1, columnspan=2,
                         sticky=tk.E)
             
-    def open_config_window():
+    def open_config_window(params):
         global config_win
-        global outfname
-        global device
         ports = comports()
         devs = []
         for port in ports:
@@ -77,21 +77,22 @@ def muon_GUI():
             port_frame.pack()
             for dv in devs:
                 dv_rbutton = tk.Radiobutton(port_frame, text=dv, 
-                    foreground="black", variable=device, value=dv)
+                    foreground="black", variable=params["device"], value=dv)
                 dv_rbutton.pack(anchor=tk.W)
             outfile_frame = tk.LabelFrame(config_win, text="Output" +
                 " File", foreground="black")
             outfile_frame.pack()
             outfile_button = tk.Button(outfile_frame, text="Select" +
-                " File", foreground="black", command = outfile_dialog)
+                " File", foreground="black", command = lambda:
+                outfile_dialog(params))
             outfile_button.grid(row=0, column=0)
             outfile_label = tk.Label(outfile_frame,
-                textvariable=outfname, foreground="black")
+                textvariable=params["outfname"], foreground="black")
             outfile_label.grid(row=0, column=1)
-            appnd = tk.BooleanVar()
-            appnd.set(False)
+            params["appnd"] = tk.BooleanVar()
+            params["appnd"].set(False)
             appnd_check = tk.Checkbutton(outfile_frame, 
-                text="Append to File", variable=appnd,
+                text="Append to File", variable=params["appnd"],
                 foreground="black")
             appnd_check.grid(row=1, column=1, sticky=tk.E)
             ok_button = tk.Button(config_win, text="OK",
@@ -134,11 +135,10 @@ def muon_GUI():
             ok_button.pack()       
 
 
-    def outfile_dialog():
+    def outfile_dialog(params):
         import tkinter.filedialog as filedialog
         import os      
-        global outfname
-        fname = outfname.get()
+        fname = params["outfname"].get()
         if os.path.dirname(fname):
             idir = os.path.dirname(fname)
         else:
@@ -146,7 +146,19 @@ def muon_GUI():
         fname = filedialog.asksaveasfilename(parent=config_win, 
             initialdir=idir, initialfile=os.path.basename(fname))
         if fname:
-            outfname.set(fname)
+            params["outfname"].set(fname)
+    
+    def detect_run(params):
+        from tkinter import messagebox
+        vartxt = "port: {:}, outfile: {:}".format(
+            params["device"].get(), params["outfname"].get())
+        messagebox.showinfo("Variables", vartxt)
+#         detectp = Process(target=detectGUI, args=(port, outfile,
+#             appnd, sampletime, ndecays, killswitch))
+#         detectp.start()
+#         return detectp
+ 
+        
         
     def quit_dialog():
         from tkinter import messagebox
@@ -158,14 +170,16 @@ def muon_GUI():
     master = tk.Tk()
     master.title('Muon Data Collection')
     
-    outfname = tk.StringVar()
-    outfname.set('muon_data.txt')
-    device = tk.StringVar()
-    device.set("/dev/null")
-    nbins_choice = tk.StringVar()
-    nbins_choice.set('20')
-    fitmethod = tk.StringVar()
-    fitmethod.set('0')
+    params = {}
+    params["outfname"] = tk.StringVar()
+    params["outfname"].set('muon_data.txt')
+    params["device"] = tk.StringVar()
+    params["device"].set("/dev/null")
+    params["nbins_choice"] = tk.StringVar()
+    params["nbins_choice"].set('20')
+    params["fitmethod"] = tk.StringVar()
+    params["fitmethod"].set('0')
+    
 
     left_frame = tk.Frame(master)
     left_frame.grid(row=0, column=0,sticky=tk.NW)
@@ -179,7 +193,7 @@ def muon_GUI():
     control_frame.grid(row=0, column=0, sticky=tk.W+tk.E+tk.N)
     config_button = tk.Button(control_frame,  text="Configure File",
         width=10, foreground="black")
-    config_button['command'] = open_config_window
+    config_button['command'] = lambda: open_config_window(params)
     config_button.grid(row=0, column=0, sticky=tk.W+tk.E+tk.N+tk.S)
     config_button.columnconfigure(0, weight=1)
     config_button.rowconfigure(0, weight=1)
@@ -194,6 +208,7 @@ def muon_GUI():
 
     start_button = tk.Button(control_frame, text="Start", width=10,
         foreground="black")
+    start_button['command'] = lambda : detect_run(params)
     start_button.grid(row=2, column=0, sticky=tk.W+tk.E+tk.N)
     pause_button = tk.Button(control_frame, text="Pause", width=10,
         foreground="black")
