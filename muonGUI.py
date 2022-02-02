@@ -18,12 +18,6 @@ def muon_GUI():
     from detect import detectGUI
     from serial.tools.list_ports import comports
     
-#     global outfname
-#     global appnd
-#     global device
-#     global plot_win
-#     global nbins_choice
-#     global fitmethod
 
     class Param:
 
@@ -84,7 +78,7 @@ def muon_GUI():
             outfile_frame.pack()
             outfile_button = tk.Button(outfile_frame, text="Select" +
                 " File", foreground="black", command = lambda:
-                outfile_dialog(params))
+                outfile_dialog(params, config_win))
             outfile_button.grid(row=0, column=0)
             outfile_label = tk.Label(outfile_frame,
                 textvariable=params["outfname"], foreground="black")
@@ -95,10 +89,54 @@ def muon_GUI():
                 text="Append to File", variable=params["appnd"],
                 foreground="black")
             appnd_check.grid(row=1, column=1, sticky=tk.E)
+            dt_frame = tk.LabelFrame(config_win, text="Detect " +
+                "Time", foreground="black")
+            dt_frame.pack()
+            params["dtime"] = tk.IntVar()
+            dttext = ['1 h', '1 d', '2 d', '7 d', 'Enter time (s):']
+            dtvals = [3600, 24 * 3600, 2 * 24 * 3600, 7 * 24 * 3600, -999]
+            dtentry = tk.Entry(dt_frame, width="10",
+                foreground="black", background="white",
+                textvariable=params["dtstr"])
+#                text=params["dtstr"].get()) 
+            def showtext():
+                dtval = params["dtime"].get()
+                if dtval == -999:
+                    dtentry.configure(state="normal")
+                else:
+                    dtentry.configure(state="disable")
+                    params['dtstr'].set(str(dtval))
+            for dt in range(4):
+                dt_rbutton = tk.Radiobutton(dt_frame,
+                    text=dttext[dt], foreground="black",
+                    variable=params["dtime"], value=dtvals[dt],
+                    command=showtext)
+                dt_rbutton.pack(anchor=tk.W)
+            dt_rbutton = tk.Radiobutton(dt_frame, text=dttext[4],
+                foreground="black", variable=params["dtime"],
+                value=dtvals[4], command=showtext)
+            dt_rbutton.pack(anchor=tk.W)
+            dtentry.pack(anchor=tk.E)
+            dtentry.configure(state='disabled')
             ok_button = tk.Button(config_win, text="OK",
                 foreground="black", command=config_win.destroy)
             ok_button.pack()       
 
+
+    def outfile_dialog(params):
+        import tkinter.filedialog as filedialog
+        import os      
+        fname = params["outfname"].get()
+        if os.path.dirname(fname):
+            idir = os.path.dirname(fname)
+        else:
+            idir = os.curdir
+#         fname = filedialog.asksaveasfilename(parent=config_win, 
+#             initialdir=idir, initialfile=os.path.basename(fname))
+        fname = filedialog.asksaveasfilename(initialdir=idir,
+            initialfile=os.path.basename(fname))
+        if fname:
+            params["outfname"].set(fname)
     def open_plot_window():
         global plot_win
         global nbins
@@ -134,19 +172,6 @@ def muon_GUI():
                 foreground="black", command=plot_win.destroy)
             ok_button.pack()       
 
-
-    def outfile_dialog(params):
-        import tkinter.filedialog as filedialog
-        import os      
-        fname = params["outfname"].get()
-        if os.path.dirname(fname):
-            idir = os.path.dirname(fname)
-        else:
-            idir = os.curdir
-        fname = filedialog.asksaveasfilename(parent=config_win, 
-            initialdir=idir, initialfile=os.path.basename(fname))
-        if fname:
-            params["outfname"].set(fname)
     
     def detect_run(params):
         from tkinter import messagebox
@@ -175,6 +200,8 @@ def muon_GUI():
     params["outfname"].set('muon_data.txt')
     params["device"] = tk.StringVar()
     params["device"].set("/dev/null")
+    params["dtstr"] = tk.StringVar()
+    params["dtstr"].set("")
     params["nbins_choice"] = tk.StringVar()
     params["nbins_choice"].set('20')
     params["fitmethod"] = tk.StringVar()
@@ -191,7 +218,7 @@ def muon_GUI():
     control_frame = tk.LabelFrame(left_frame, text="Control",
         foreground="black", padx=75)
     control_frame.grid(row=0, column=0, sticky=tk.W+tk.E+tk.N)
-    config_button = tk.Button(control_frame,  text="Configure File",
+    config_button = tk.Button(control_frame,  text="Configure Detection",
         width=10, foreground="black")
     config_button['command'] = lambda: open_config_window(params)
     config_button.grid(row=0, column=0, sticky=tk.W+tk.E+tk.N+tk.S)
@@ -206,11 +233,11 @@ def muon_GUI():
     plot_config_button.rowconfigure(1, weight=1)
 
 
-    start_button = tk.Button(control_frame, text="Start", width=10,
+    start_button = tk.Button(control_frame, text="Start Detection", width=10,
         foreground="black")
     start_button['command'] = lambda : detect_run(params)
     start_button.grid(row=2, column=0, sticky=tk.W+tk.E+tk.N)
-    pause_button = tk.Button(control_frame, text="Pause", width=10,
+    pause_button = tk.Button(control_frame, text="Pause Detection", width=10,
         foreground="black")
     pause_button.grid(row=3, column=0, sticky=tk.W+tk.E+tk.N)
     fit_button = tk.Button(control_frame, text="Fit", width=10,
