@@ -1,12 +1,15 @@
-from __future__ import print_function, division
 import os
-import ipywidgets as widgets
-from serial.tools.list_ports import comports
-import numpy as np
-import matplotlib.pyplot as plt
-import tkinter.filedialog as filedialog
+from platform import system as sys
+from subprocess import Popen, STDOUT
+import time
 import tkinter as tk
-from platform import system as platform
+import tkinter.filedialog as filedialog
+
+from IPython.display import display, clear_output, update_display
+import ipywidgets as widgets
+import matplotlib.pyplot as plt
+import numpy as np
+from serial.tools.list_ports import comports
 
 
 class controlpanel:
@@ -82,7 +85,6 @@ class controlpanel:
     def fdialog(self):
         
         def opendialog(parent, fpath, fname):
-            from platform import system as sys
             if sys() == 'Darwin':  # How Mac OS X is identified by Python
                 os.system('/usr/bin/osascript -e ' + 
                     '\'tell app "Finder" to set frontmost of process ' +
@@ -124,7 +126,6 @@ def deltaports():
 
 def detect_spawn(port, outfile='muondata.txt', appnd=False, sampletime=0,
     ndecays=0):
-    from subprocess import Popen, STDOUT
     if appnd:
         proc = Popen(['python', '-m', 'Muon.detect', '-a', '-n',
             str(ndecays), '-t', str(sampletime), '-o', outfile, port])
@@ -134,9 +135,6 @@ def detect_spawn(port, outfile='muondata.txt', appnd=False, sampletime=0,
     return proc
 
 def detect_monitor(fname='muon_data.txt', hgrange=[0, 20]):
-    import matplotlib.pyplot as plt
-    from IPython.display import display, clear_output, update_display
-    import time
     
     def follow(thefile):
     #    thefile.seek(0,2)
