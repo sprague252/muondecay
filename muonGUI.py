@@ -1,23 +1,25 @@
 #! /usr/bin/env python
 
+import argparse
+import re
+from multiprocessing import Process, Value, Array
+import os      
+import sys
 import tkinter as tk
+import tkinter.filedialog as filedialog
+import numpy as np
+
+from matplotlib.backends.backend_tkagg import (
+    FigureCanvasTkAgg, NavigationToolbar2Tk)
+from matplotlib.backend_bases import key_press_handler
+from matplotlib.figure import Figure
+import scipy.interpolate as interp
+from serial.tools.list_ports import comports
+
+from detect import detectGUI
 
 
-def muon_GUI():
-    import argparse
-    import numpy as np
-    from matplotlib.backends.backend_tkagg import (
-        FigureCanvasTkAgg, NavigationToolbar2Tk)
-    from matplotlib.backend_bases import key_press_handler
-    from matplotlib.figure import Figure
-    import re
-    import scipy.interpolate as interp
-    #import tk.messagebox
-    #import subprocess
-    from multiprocessing import Process, Value, Array
-    from detect import detectGUI
-    from serial.tools.list_ports import comports
-    
+def muon_GUI():    
 
     class Param:
 
@@ -124,8 +126,6 @@ def muon_GUI():
 
 
     def outfile_dialog(params):
-        import tkinter.filedialog as filedialog
-        import os      
         fname = params["outfname"].get()
         if os.path.dirname(fname):
             idir = os.path.dirname(fname)
@@ -308,6 +308,4 @@ def muon_GUI():
     
 
 if __name__ == '__main__':
-    import argparse
-    import sys
     muon_GUI()
