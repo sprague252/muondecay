@@ -8,7 +8,16 @@ help message with command-line arguments or "help(detect.detect)" from
 within IPython (Jupyter) for a complete docstring of the detect
 function.
 """
-from __future__ import division, print_function
+import re
+import time
+import sys
+import time
+import argparse
+from os import fsync
+
+import numpy as np
+import serial
+
 
 def detect(port, outfile='muondata.txt', appnd=False, sampletime=0,
     ndecays=0, killswitch=None):
@@ -50,12 +59,6 @@ def detect(port, outfile='muondata.txt', appnd=False, sampletime=0,
         data are appended to a file, this time does not include the time
         for any previous samples.
     """
-    import numpy as np
-    import re
-    import serial
-    import time
-    import sys
-    from os import fsync
     if appnd:
         fmode = 'a'
     else:
@@ -138,8 +141,6 @@ def detect(port, outfile='muondata.txt', appnd=False, sampletime=0,
 
 
 if __name__ == '__main__':
-    import argparse
-    import sys
     parser = argparse.ArgumentParser(description = 
         ('Acquire data from the TeachSpin muon decay apparatus.'))
     parser.add_argument('-a', '--append', action='store_true',
