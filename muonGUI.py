@@ -16,8 +16,10 @@ from matplotlib.figure import Figure
 import scipy.interpolate as interp
 from serial.tools.list_ports import comports
 
-from detect import detectGUI
+from Muon.detect import detect
 
+config_win = None
+plot_win = None
 
 def muon_GUI():    
 
@@ -61,12 +63,12 @@ def muon_GUI():
         ports = comports()
         devs = []
         for port in ports:
-            devs = devs + [port.device]
+            devs = devs + [port.device]            
         try:
             if config_win.state() == 'normal':
                 config_win.focus()
         except:
-            config_win = tk.Toplevel()
+            config_win = tk.Toplevel(master)
             config_win.title("Output File Configuration")
             port_frame = tk.LabelFrame(config_win, text="Select " +
                 "Port", foreground="black")
@@ -137,10 +139,9 @@ def muon_GUI():
             initialfile=os.path.basename(fname))
         if fname:
             params["outfname"].set(fname)
-    def open_plot_window():
+            
+    def open_plot_window(params):
         global plot_win
-        global nbins
-        global fitmethod
         try:
             if plot_win.state() == 'normal':
                 plot_win.focus()
@@ -152,21 +153,21 @@ def muon_GUI():
             bins_frame.pack()
             for nb in ["5", "10", "20"]:
                 nb_rbutton = tk.Radiobutton(bins_frame, text=nb, 
-                    foreground="black", variable=nbins_choice, value=nb)
+                    foreground="black", variable=params["nbins_choice"], value=nb)
                 nb_rbutton.pack(anchor=tk.W)
             # Add an other value choice with value -1.
             nb_rbutton = tk.Radiobutton(bins_frame, text="Other Value", 
-                    foreground="black", variable=nbins_choice, value="-1")
+                    foreground="black", variable=params["nbins_choice"], value="-1")
             nb_rbutton.pack(anchor=tk.W)
             fit_frame = tk.LabelFrame(plot_win, text="Fit " +
                 "Method", foreground="black")
             fit_frame.pack()
             fit_rbutton = tk.Radiobutton(fit_frame, text="Nonlinear fit", 
-                    foreground="black", variable=fitmethod, value="0")
+                    foreground="black", variable=params['fitmethod'], value="0")
             fit_rbutton.pack(anchor=tk.W)
             fit_rbutton = tk.Radiobutton(fit_frame, 
                 text="Background subtract", foreground="black",
-                variable=fitmethod, value="1")
+                variable=params['fitmethod'], value="1")
             fit_rbutton.pack(anchor=tk.W)
             ok_button = tk.Button(plot_win, text="OK",
                 foreground="black", command=plot_win.destroy)
@@ -206,7 +207,8 @@ def muon_GUI():
     params["nbins_choice"].set('20')
     params["fitmethod"] = tk.StringVar()
     params["fitmethod"].set('0')
-    
+    params["log_lin"] = tk.StringVar()
+    params["log_lin"].set('linear')
 
     left_frame = tk.Frame(master)
     left_frame.grid(row=0, column=0,sticky=tk.NW)
@@ -227,7 +229,7 @@ def muon_GUI():
 
     plot_config_button = tk.Button(control_frame,  text="Configure Plot",
         width=10, foreground="black")
-    plot_config_button['command'] = open_plot_window
+    plot_config_button['command'] = lambda: open_plot_window(params)
     plot_config_button.grid(row=1, column=0, sticky=tk.W+tk.E+tk.N+tk.S)
     plot_config_button.columnconfigure(0, weight=1)
     plot_config_button.rowconfigure(1, weight=1)
