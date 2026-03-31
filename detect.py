@@ -72,7 +72,7 @@ def detect(port, outfile='muondata.txt', appnd=False, sampletime=0,
     muon_count = 0
     # Define the regex substitution string to eliminate groups of less
     # than three characters.
-    ex_3_digit = b'^[\dA-E]{1,2}\r|\n[\dA-E]{1,2}\r|\n[\dA-E]{1,2}\r?$'
+    ex_3_digit = b'^[\\dA-E]{1,2}\r|\n[\\dA-E]{1,2}\r|\n[\\dA-E]{1,2}\r?$'
     # Define the regex substitution string to eliminate return and
     # newline characters.
     ex_cr_newline = b'\r\n*|\n'
