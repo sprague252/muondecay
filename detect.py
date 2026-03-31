@@ -104,28 +104,29 @@ def detect(port, outfile='muondata.txt', appnd=False, sampletime=0,
             muon_count += data_ns.size
             decay_count += data_ns[data_ns < 20000].size
             timeouts = np.flip(np.argwhere(data_ns==20000).flatten())
-            prev = timeouts[0]
-            count = 1
-            indlist = np.array([], dtype=np.int64)
-            countlist = np.array([], dtype=np.int64)
-            for val in timeouts[1:]:
-                if val == prev - 1:
-                    count += 1
-                else:
-                    indlist = np.insert(indlist, 0, prev)
-                    if count == 1:
-                        countlist = np.insert(countlist, 0, 40000)
+            if timeouts.size > 0
+                prev = timeouts[0]
+                count = 1
+                indlist = np.array([], dtype=np.int64)
+                countlist = np.array([], dtype=np.int64)
+                for val in timeouts[1:]:
+                    if val == prev - 1:
+                        count += 1
                     else:
-                        countlist = np.insert(countlist, 0, 40000+count)
-                    count = 1
-                prev = val
-            indlist = np.insert(indlist, 0, prev)
-            if count == 1:
-                countlist = np.insert(countlist, 0, 40000)
-            else:
-                countlist = np.insert(countlist, 0, 40000+count)            
-            data_ns[indlist] = countlist
-            data_ns = data_ns[data_ns != 20000]
+                        indlist = np.insert(indlist, 0, prev)
+                        if count == 1:
+                            countlist = np.insert(countlist, 0, 40000)
+                        else:
+                            countlist = np.insert(countlist, 0, 40000+count)
+                        count = 1
+                    prev = val
+                indlist = np.insert(indlist, 0, prev)
+                if count == 1:
+                    countlist = np.insert(countlist, 0, 40000)
+                else:
+                    countlist = np.insert(countlist, 0, 40000+count)            
+                data_ns[indlist] = countlist
+                data_ns = data_ns[data_ns != 20000]
             data_out = (np.concatenate(([data_ns], 
                 [tstamp * np.ones(data_ns.size, dtype=np.int64)]), axis=0).T)
             np.savetxt(output, data_out, fmt='%d')
