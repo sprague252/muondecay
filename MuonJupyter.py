@@ -113,6 +113,9 @@ class controlpanel:
             root.destroy()
 
 def getports():
+    """Returns an array of available ports with the ports containing
+    'USB' in their name at the front of the array.
+    """
     ports = comports()
     devs = []
     for port in ports:
@@ -121,10 +124,17 @@ def getports():
     return sorted_devs
 
 def USB_sort_key(item):
+    """Sort function to prioritize items with 'USB' in the name.
+    """
     has_USB = 'USB' in item
     return (not has_USB, item)
 
 def deltaports():
+    """A helper function to find the port associated with the muon
+    detector. Execute the function with the USB cable disconnected,
+    and follow the instructions in the prompt about connecting the
+    cable. The function identifies the new port and returns its name.
+    """
     devs0 = getports()
     print('Serial ports scanned ...')
     input('Connect new device. Then press any key ...')
@@ -134,6 +144,31 @@ def deltaports():
 
 def detect_spawn(port, outfile='muondata.txt', appnd=False, sampletime=0,
     ndecays=0):
+    """Open a background process running the detect function. The 
+    process will detect muon events and record them to a file, which
+    can be monitored.
+    
+    USAGE
+    
+    proc = detect_spawn(port[, outfile='muondata.txt', appnd=False, 
+        sampletime=0, ndecays=0])
+        
+    PARAMETERS
+    
+    port: serial port (device) connected to the muon detector
+    outfile: name of the output file (default: muondata.txt)
+    appnd: append data to the output file if it exists (otherwise the
+        file is overwritten)
+    sampletime: Clock time (seconds) for which the data should be
+        collected. A value of 0 results in a limit of 1 week (604800 s).
+        (default: 0)
+    ndecays: target number of muon decays (0 for no target). Program
+        ends once the target is met or exceeded. (default: 0)
+    
+    RETURNS
+    
+    proc: Process handle returned by subprocess.Popen
+    """
     if appnd:
         proc = Popen(['python', '-m', 'Muon.detect', '-a', '-n',
             str(ndecays), '-t', str(sampletime), '-o', outfile, port])
@@ -143,6 +178,20 @@ def detect_spawn(port, outfile='muondata.txt', appnd=False, sampletime=0,
     return proc
 
 def detect_monitor(fname='muon_data.txt', hgrange=[0, 20], mtime=60.):
+    """
+    Monitor the data file, plotting a decay histogram and updating the 
+    plot with new detections.
+    
+    USAGE
+    
+    detect_monitor([fname='muon_data.txt', hgrange=[0, 20], mtime=60.])
+    
+    PARAMETERS
+    
+    fname: Optional data file name to monitor. (default: 'muon_data.txt')
+    hgrange: Optional range for histogram times. (default: [0, 20])
+    mtime: Optional time in seconds to monitor the file. (default: 60)
+    """
     
     def follow(thefile, nnloop=600):
     #    thefile.seek(0,2)
