@@ -104,7 +104,7 @@ def detect(port, outfile='muondata.txt', appnd=False, sampletime=0,
             muon_count += data_ns.size
             decay_count += data_ns[data_ns < 20000].size
             timeouts = np.flip(np.argwhere(data_ns==20000).flatten())
-            if timeouts.size > 0
+            if timeouts.size > 0:
                 prev = timeouts[0]
                 count = 1
                 indlist = np.array([], dtype=np.int64)
