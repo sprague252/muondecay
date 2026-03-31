@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 from matplotlib.widgets import Button
 from serial.tools.list_ports import comports
 
+from detect import detect
 
 class controlpanel:
 
@@ -129,10 +130,10 @@ def deltaports():
 def detect_spawn(port, outfile='muondata.txt', appnd=False, sampletime=0,
     ndecays=0):
     if appnd:
-        proc = Popen(['python', '-m', 'Muon.detect', '-a', '-n',
+        proc = Popen(['python', '-m', 'detect', '-a', '-n',
             str(ndecays), '-t', str(sampletime), '-o', outfile, port])
     else:
-        proc = Popen(['python', '-m', 'Muon.detect', '-n', str(ndecays),
+        proc = Popen(['python', '-m', 'detect', '-n', str(ndecays),
             '-t', str(sampletime), '-o', outfile, port])
     return proc
 
