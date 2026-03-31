@@ -120,10 +120,10 @@ def getports():
     devs = []
     for port in ports:
         devs = devs + [port.device]
-    sorted_devs = sorted(devs, key=USB_sort_key)
+    sorted_devs = sorted(devs, key=_USB_sort_key)
     return sorted_devs
 
-def USB_sort_key(item):
+def _USB_sort_key(item):
     """Sort function to prioritize items with 'USB' in the name.
     """
     has_USB = 'USB' in item
@@ -193,7 +193,7 @@ def detect_monitor(fname='muon_data.txt', hgrange=[0, 20], mtime=60.):
     mtime: Optional time in seconds to monitor the file. (default: 60)
     """
     
-    def follow(thefile, nnloop=600):
+    def _follow(thefile, nnloop=600):
     #    thefile.seek(0,2)
         nloop = 0
         while nloop < nnloop:
@@ -206,7 +206,7 @@ def detect_monitor(fname='muon_data.txt', hgrange=[0, 20], mtime=60.):
         line = '-999'
         yield line
     
-    def hgplot(fig, ax, times, clearout=True):
+    def _hgplot(fig, ax, times, clearout=True):
         hist, bin_edge, _ = ax.hist(times, bins = 20, range = hgrange, 
            edgecolor='black', facecolor='0.85')
         ax.set_xlabel(r'Time ($\mu$s)')
@@ -233,16 +233,16 @@ def detect_monitor(fname='muon_data.txt', hgrange=[0, 20], mtime=60.):
             else:
                 partial = line
         fig, ax = plt.subplots()
-        hgplot(fig, ax, times)
+        _hgplot(fig, ax, times)
 #         bax = plt.axes([0.8, -0.05, 0.1, 0.075])
 #         plt.draw()
 #         plt.pause(0.0001)
 #         clear_output(wait=True)
-        datalines = follow(datafile, nnloop=10*mtime)
+        datalines = _follow(datafile, nnloop=10*mtime)
         for line in datalines:
             if line == '-999':
                 fig, ax = plt.subplots()
-                hgplot(fig, ax, times, clearout=False)
+                _hgplot(fig, ax, times, clearout=False)
                 print('Monitor period {:g} s ended.'.format(mtime) +
                     '  Run again to continue monitoring.')
                 return times
@@ -253,7 +253,7 @@ def detect_monitor(fname='muon_data.txt', hgrange=[0, 20], mtime=60.):
                     times = np.append(times, [int(data[0])/1000.])
 #                     clear_output()
                     fig, ax = plt.subplots()
-                    hgplot(fig, ax, times)
+                    _hgplot(fig, ax, times)
 #                     bax = plt.axes([0.8, -0.05, 0.1, 0.075])
 #                     stopit = Button(bax, 'Stop')
 #                     stopit.on_clicked(killit)
