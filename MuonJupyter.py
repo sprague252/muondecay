@@ -194,6 +194,7 @@ def detect_monitor(fname='muon_data.txt', hgrange=[0, 20], mtime=60.):
     """
     
     def _follow(thefile, nnloop=600):
+        # Get new lines in thefile using yield
     #    thefile.seek(0,2)
         nloop = 0
         while nloop < nnloop:
@@ -207,6 +208,7 @@ def detect_monitor(fname='muon_data.txt', hgrange=[0, 20], mtime=60.):
         yield line
     
     def _hgplot(fig, ax, times, clearout=True):
+        # Plot decay histogram
         hist, bin_edge, _ = ax.hist(times, bins = 20, range = hgrange, 
            edgecolor='black', facecolor='0.85')
         ax.set_xlabel(r'Time ($\mu$s)')
