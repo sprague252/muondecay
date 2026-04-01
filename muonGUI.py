@@ -18,8 +18,10 @@ from matplotlib.backend_bases import key_press_handler
 from matplotlib.figure import Figure
 import scipy.interpolate as interp
 from serial.tools.list_ports import comports
+from tkinter import messagebox
 
-from Muon.detect import detect
+
+from Muon.detect import detect_queue
 
 config_win = None
 plot_win = None
@@ -178,16 +180,23 @@ def muon_GUI():
                 foreground="black", command=plot_win.destroy)
             ok_button.pack()       
 
-    
+    def retrieve_decays(data_queue):
+        """Yield decays from queue"""
+        while True:
+            yield data_queue.get()
+        
     def detect_run(params):
-        from tkinter import messagebox
-        vartxt = "port: {:}, outfile: {:}".format(
-            params["device"].get(), params["outfname"].get())
-        messagebox.showinfo("Variables", vartxt)
-#         detectp = Process(target=detectGUI, args=(port, outfile,
-#             appnd, sampletime, ndecays, killswitch))
-#         detectp.start()
-#         return detectp
+        data_queue = queue.Queue()
+#         vartxt = "port: {:}, outfile: {:}".format(
+#             params["device"].get(), params["outfname"].get())
+#         messagebox.showinfo("Variables", vartxt)
+        # Start detect thread.
+        t = threading.Thread(target=detect_queue, args=(port,
+            data_queue), kwargs={'outfile': params['outfname'],
+            'appnd': params["appnd"]})
+        t.daemon = True
+        t.start()
+        for decaydata in retrieve_decays(data_queue)
  
         
         
