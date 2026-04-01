@@ -2,12 +2,15 @@
 
 import argparse
 import re
-from multiprocessing import Process, Value, Array
 import os      
 import sys
 import tkinter as tk
 import tkinter.filedialog as filedialog
 import numpy as np
+import serial
+import threading
+import queue
+import time
 
 from matplotlib.backends.backend_tkagg import (
     FigureCanvasTkAgg, NavigationToolbar2Tk)
@@ -20,6 +23,8 @@ from Muon.detect import detect
 
 config_win = None
 plot_win = None
+
+baudrate = 115200
 
 def muon_GUI():    
 
@@ -305,9 +310,7 @@ def muon_GUI():
         height=100, padx=5, pady=5)
     detector_frame.grid(row=1, column=0, sticky=tk.W+tk.E+tk.N)
 
-    master.mainloop()
-        
-    
+    master.mainloop()                    
 
 if __name__ == '__main__':
     muon_GUI()
