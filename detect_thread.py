@@ -4,29 +4,31 @@ import numpy as np
 import serial
 import threading
 import queue
+import sys
 import time
+from os import fsync
 
 
 def detect_reader(port, baudrate, data_queue):
     with serial.Serial(port, baudrate=baudrate, timeout=1) as ser:
         buffer = b''
-        while reading:
+        while True:
             if ser.in_waiting > 0:
                 new_data = ser.read(ser.in_waiting)
                 buffer += new_data
                 while b"\n" in buffer:
-                    line_data, buffer = buffer.split(b'\n', 1)
+                    line_bytes, buffer = buffer.split(b'\n', 1)
                     # Put decoded line into queue
-                    data_queue.put(line_data.decode('utf-8', errors='ignore').strip())
+                    data_queue.put(line_bytes)
             else:
                 time.sleep(0.01) # Allow CPU to do other things.
 
-def reteieve_from_queue(data_queue):
+def retrieve_from_queue(data_queue):
     """Yields lines from queue."""
     while True:
         yield data_queue.get()
         
-def detect_thread(port, baudrate=115200, appnd=False, sampletime=0, ndecays=0):
+def detect_thread(port, outfile='muondata.txt', baudrate=115200, appnd=False, sampletime=0, ndecays=0):
     if appnd:
         fmode = 'a'
     else:
@@ -40,6 +42,13 @@ def detect_thread(port, baudrate=115200, appnd=False, sampletime=0, ndecays=0):
 
     decay_count = 0
     muon_count = 0
+    # Define the regex substitution string to eliminate groups of less
+    # than three characters.
+    ex_3_digit = b'^[\\dA-E]{1,2}\r|\n[\\dA-E]{1,2}\r|\n[\\dA-E]{1,2}\r?$'
+    # Define the regex substitution string to eliminate return and
+    # newline characters.
+    ex_cr_newline = b'\r\n*|\n'
+
     t0 = time.time()
     # Start reader thread.
     t = threading.Thread(target=detect_reader, args=(port, baudrate, line_queue))
