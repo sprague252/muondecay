@@ -39,7 +39,7 @@ class MuonApp:
         
         self.q = q
         self.paused = False
-        self.data = deque()
+        self.data = np.array([], dtype=int)
         self.config_win = None
         # Figure for histogram
         self.fig = Figure(figsize=(5, 4), dpi=100)
@@ -164,8 +164,9 @@ class MuonApp:
     def update_histogram(self):
         if not self.paused:
             while not self.q.empty():
-                self.data.append(self.q.get())
-
+                newdecays, newcounts = q.get()
+                self.data.append(newdecays)
+                self.ndecays += newcounts
             self.ax.clear()
             self.ax.hist(self.data, bins=20, range=(0, 20), edgecolor="black")
             self.ax.set_title("Muon Decay Times")
