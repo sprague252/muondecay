@@ -187,6 +187,7 @@ def detect_queue(port, data_queue, outfile='muondata.txt', appnd=False, sampleti
     """
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.DEBUG)
+    logging.basicConfig()  # configure root handler
     logger.debug('Started detect_queue')
     if appnd:
         fmode = 'a'
@@ -271,7 +272,6 @@ def detect_queue(port, data_queue, outfile='muondata.txt', appnd=False, sampleti
             if killswitch:
                 if killswitch.value == False:
                     reading = False
-    return muon_count, decay_count, etime
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description = 
