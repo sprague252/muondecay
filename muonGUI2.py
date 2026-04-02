@@ -172,11 +172,10 @@ class MuonApp:
         #logger.debug("update_histogram")
         if not self.paused:
             while not self.q.empty():
-                newdecays, newcounts = q.get()
+                newdecays = q.get()
                 self.data.append(newdecays)
-                self.ndecays += newcounts
                 logger.debug('Data from q') 
-                logger.debug(f'newdecays: {newdecays}; newcounts: {newcounts}')
+                logger.debug(f'newdecays: {newdecays}; data: {data}')
             self.ax.clear()
             self.ax.hist(self.data, bins=20, range=(0, 20), edgecolor="black")
             self.ax.set_title("Muon Decay Times")
