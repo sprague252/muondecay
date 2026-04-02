@@ -186,7 +186,7 @@ def detect_queue(port, data_queue, outfile='muondata.txt', appnd=False, sampleti
         for any previous samples.
     """
     logger = logging.getLogger(__name__)
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.INFO)
     logging.basicConfig()  # configure root handler
     logger.debug('Started detect_queue')
     if appnd:
@@ -233,7 +233,7 @@ def detect_queue(port, data_queue, outfile='muondata.txt', appnd=False, sampleti
             data_ns = np.array([20 * int(n, 16) for n in data0x])
             muon_count += data_ns.size
             # Make an array of only decays and put it in the queue.
-            decays = data_ns[data_ns < 20000]
+            decays = data_ns[data_ns < 20000] / 1000
             decay_count += decays.size
             if decays.size > 0:
                 data_queue.put(decays)

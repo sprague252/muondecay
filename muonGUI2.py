@@ -27,7 +27,7 @@ from Muon.detect import detect_queue
 import logging
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 logging.basicConfig()  # configure root handler
 
 
@@ -172,17 +172,17 @@ class MuonApp:
         #logger.debug("update_histogram")
         if not self.paused:
             while not self.q.empty():
-                newdecays = q.get()
-                self.data.append(newdecays)
+                newdecays = self.q.get()
+                self.data.extend(newdecays)
                 logger.debug('Data from q') 
-                logger.debug(f'newdecays: {newdecays}; data: {data}')
+                logger.debug(f'newdecays: {newdecays}; data: {self.data}')
             self.ax.clear()
             self.ax.hist(self.data, bins=20, range=(0, 20), edgecolor="black")
             self.ax.set_title("Muon Decay Times")
 
             self.canvas.draw_idle()
 
-        self.root.after(1000, self.update_histogram)
+        self.root.after(100, self.update_histogram)
 
 def getports():
     """Returns an array of available ports with the ports containing
