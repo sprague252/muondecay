@@ -236,7 +236,7 @@ def detect_queue(port, data_queue, outfile='muondata.txt', appnd=False, sampleti
             decays = data_ns[data_ns < 20000]
             decay_count += decays.size
             if decays.size > 0:
-                data_queue.put((decays, decays.size))
+                data_queue.put(decays)
             timeouts = np.flip(np.argwhere(data_ns==20000).flatten())
             if timeouts.size > 0:
                 prev = timeouts[0]
