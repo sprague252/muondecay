@@ -192,11 +192,11 @@ def getports():
     devs = []
     for port in ports:
         devs = devs + [port.device]
-    pattern = r'*USB*'
-    usbports = [port for ports in devs if re.search(pattern, port, re.IGNORECASE)]
-    if len(usbports) == 0:
+    pattern = r'USB'
+    usbdevs = [dev for dev in devs if re.search(pattern, dev)]
+    if len(usbdevs) == 0:
         return devs
-    return usbports
+    return usbdevs
     
 logger.debug("Starting")
 root = tk.Tk()
