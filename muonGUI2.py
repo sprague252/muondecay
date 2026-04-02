@@ -175,7 +175,8 @@ class MuonApp:
                 newdecays, newcounts = q.get()
                 self.data.append(newdecays)
                 self.ndecays += newcounts
-                logger.debug('Received data from q', newdecays, newcounts)
+                logger.debug('Data from q') 
+                logger.debug(f'newdecays: {newdecays}; newcounts: {newcounts}')
             self.ax.clear()
             self.ax.hist(self.data, bins=20, range=(0, 20), edgecolor="black")
             self.ax.set_title("Muon Decay Times")
