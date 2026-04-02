@@ -8,7 +8,7 @@ help message with command-line arguments or "help(detect.detect)" from
 within IPython (Jupyter) for a complete docstring of the detect
 function.
 """
-import rex
+import re
 import time
 import sys
 import time
