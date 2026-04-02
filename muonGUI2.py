@@ -28,6 +28,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
+logging.basicConfig()  # configure root handler
 
 
 class MuonApp:
@@ -168,7 +169,7 @@ class MuonApp:
         self.paused = False
     
     def update_histogram(self):
-        logger.debug("update_histogram")
+        #logger.debug("update_histogram")
         if not self.paused:
             while not self.q.empty():
                 newdecays, newcounts = q.get()
@@ -181,7 +182,7 @@ class MuonApp:
 
             self.canvas.draw_idle()
 
-        self.root.after(100, self.update_histogram)
+        self.root.after(1000, self.update_histogram)
 
 def getports():
     """Returns an array of available ports with the ports containing
@@ -191,15 +192,13 @@ def getports():
     devs = []
     for port in ports:
         devs = devs + [port.device]
-    sorted_devs = sorted(devs, key=_USB_sort_key)
-    return sorted_devs
-
-def _USB_sort_key(item):
-    """Sort function to prioritize items with 'USB' in the name.
-    """
-    has_USB = 'USB' in item
-    return (not has_USB, item)
-
+    pattern = r'*USB*'
+    usbports = [port for ports in devs if re.search(pattern, port, re.IGNORECASE)]
+    if len(usbports) == 0:
+        return devs
+    return usbports
+    
+logger.debug("Starting")
 root = tk.Tk()
 root.title("Muon Decay Monitor")
 
