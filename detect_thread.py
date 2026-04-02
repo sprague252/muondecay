@@ -28,7 +28,8 @@ def retrieve_from_queue(data_queue):
     while True:
         yield data_queue.get()
         
-def detect_thread(port, outfile='muondata.txt', baudrate=115200, appnd=False, sampletime=0, ndecays=0):
+def detect_thread(port, outfile='muondata.txt', baudrate=115200, appnd=False,
+    sampletime=0, ndecays=0):
     if appnd:
         fmode = 'a'
     else:

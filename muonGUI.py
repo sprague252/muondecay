@@ -9,7 +9,6 @@ import tkinter.filedialog as filedialog
 import numpy as np
 import serial
 import threading
-import queue
 import time
 
 from matplotlib.backends.backend_tkagg import (
