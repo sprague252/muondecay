@@ -19,6 +19,8 @@ import queue
 import numpy as np
 import serial
 
+import logging
+
 
 def detect(port, outfile='muondata.txt', appnd=False, sampletime=0,
     ndecays=0, killswitch=None):
@@ -183,6 +185,9 @@ def detect_queue(port, data_queue, outfile='muondata.txt', appnd=False, sampleti
         data are appended to a file, this time does not include the time
         for any previous samples.
     """
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.DEBUG)
+    logger.debug('Started detect_queue')
     if appnd:
         fmode = 'a'
     else:
