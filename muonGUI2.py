@@ -39,7 +39,7 @@ class MuonApp:
         
         self.q = q
         self.paused = False
-        self.data = dequeue()
+        self.data = deque()
         self.config_win = None
         # Figure for histogram
         self.fig = Figure(figsize=(5, 4), dpi=100)
