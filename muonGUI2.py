@@ -49,9 +49,12 @@ class MuonApp:
         self.data = deque()
         self.config_win = None
         # Figure for histogram
-        self.fig = Figure(figsize=(5, 4), dpi=100)
+        self.fig = Figure(figsize=(8, 6), dpi=100)
         self.ax = self.fig.add_subplot(111)
         self.ax.set_title("Muon Decay Times")
+        self.ax.set_ylim([0, 20])
+        self.ax.set_xlabel(r'Time ($\mu$s)')
+        self.ax.set_ylabel('Counts')
         self.canvas = FigureCanvasTkAgg(self.fig, master=root)
         self.canvas.get_tk_widget().pack()
         controls = tk.Frame(root)
@@ -179,6 +182,8 @@ class MuonApp:
             self.ax.clear()
             self.ax.hist(self.data, bins=20, range=(0, 20), edgecolor="black")
             self.ax.set_title("Muon Decay Times")
+            self.ax.set_xlabel(r'Time ($\mu$s)')
+            self.ax.set_ylabel('Counts')
 
             self.canvas.draw_idle()
 
