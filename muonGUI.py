@@ -16,11 +16,15 @@ from matplotlib.backends.backend_tkagg import (
     FigureCanvasTkAgg, NavigationToolbar2Tk)
 from matplotlib.backend_bases import key_press_handler
 from matplotlib.figure import Figure
-import scipy.interpolate as interp
 from serial.tools.list_ports import comports
 from tkinter import messagebox
 from collections import deque
 
+# Import functions needed to fit data
+from lmfit.models import ExponentialModel, ConstantModel
+# Need Statistical distributions (Student T and Chi square)
+import scipy.stats as stats 
+import pandas as pd
 
 from Muon.detect import detect_queue
 
@@ -57,15 +61,27 @@ class MuonApp:
         self.ax.set_ylim([0, 20])
         self.ax.set_xlabel(r'Time ($\mu$s)')
         self.ax.set_ylabel('Counts')
+        self.bins = np.arange(0, 21, 1)
+        self.tt = (bins[1:] + bins[0:-1]) / 2
+        self.counts = np.array([], dtype=int)
         self.canvas = FigureCanvasTkAgg(self.fig, master=root)
         self.canvas.get_tk_widget().pack()
         controls = tk.Frame(root)
         controls.pack(pady=5)
         self.configbutton = tk.Button(controls, text="Configure",
-            command=self.configure).pack(side=tk.LEFT, padx=5)
+            command=self.configure)
+        self.configbutton.pack(side=tk.LEFT, padx=5)
         self.startbutton = tk.Button(controls, text="Start",
-            command=self.collect).pack(side=tk.LEFT, padx=5)
-        self.quitbutton = tk.Button(controls, text="Quit", command=self.confirm_quit).pack(side=tk.RIGHT, padx=5)
+            command=self.collect)
+        self.startbutton.pack(side=tk.LEFT, padx=5)
+        self.fitbutton = tk.Button(controls, text='Fit',
+            command=self.fit, state='disabled')
+        self.fitbutton.pack(side=tk.LEFT, padx=5)
+        self.savefigbutton(controls, text='Save Histogram',
+            command=self.savefig, state='disabled')
+        self.quitbutton = tk.Button(controls, text="Quit",
+            command=self.confirm_quit)
+        self.quitbutton.pack(side=tk.RIGHT, padx=5)
         self.update_histogram()
     
     def configure(self):
@@ -163,30 +179,26 @@ class MuonApp:
         self.fname.set(os.path.relpath(self.outfname))
         
     def collect(self): 
-        self.togglebutton()
+        self.startbutton.config(text='Pause', command=self.pause)
         threading.Thread(target=detect_queue, args=(self.port,
             self.q, self.control_q), kwargs={'outfile':
             'self.outfname', 'appnd': False, 'sampletime':
             self.sampletime, 'ndecays': self.ndecays},
             daemon=True).start()
-
-    def togglebutton(self):
-        if self.startbutton.text == 'Start':
-            self.startbutton.config(text='Pause', command=self.pause)
-        elif self.startbutton.text == 'Pause':
-            self.startbutton.config(text='Resume', command=self.resume)
-        elif self.startbutton.text == 'Resume':
-            self.startbutton.config(text='Pause', command=self.pause)
           
     def pause(self):
         self.control_q.put('pause')
         self.paused = True
-        self.togglebutton()
+        self.startbutton.config(text='Resume', command=self.resume)
+        self.fitbutton.config(state='normal')
+        self.savefigbutton.config(state='normal')
     
     def resume(self):
         self.paused = False
         self.control_q.put('resume')
-        self.togglebutton()
+        self.startbutton.config(text='Pause', command=self.pause)
+        self.fitbutton.config(state='disabled')
+        self.savefigbutton.config(state='disabled')
 
     def stop(self):
         self.control_q.put('stop')
@@ -201,7 +213,8 @@ class MuonApp:
                 logger.debug('Data from q') 
                 logger.debug(f'newdecays: {newdecays}; data: {self.data}')
             self.ax.clear()
-            self.ax.hist(self.data, bins=20, range=(0, 20), edgecolor="black")
+            self.bincounts, _, _ = self.ax.hist(self.data,
+                bins=self.bins, edgecolor="black", label='Data')
             self.ax.set_title("Muon Decay Times")
             self.ax.set_xlabel(r'Time ($\mu$s)')
             self.ax.set_ylabel('Counts')
@@ -209,9 +222,48 @@ class MuonApp:
             self.canvas.draw_idle()
 
         self.root.after(100, self.update_histogram)
+    
+    def fit(self):
+        muondecay = ExponentialModel()
+        bg = ConstantModel()
+        model = muondecay + bg
+        init = bg.make_params(c=self.bincounts[-1])
+        init += muon.make_params(amplitude=100, decay=1.67)
+        nlm = model.fit(self.bincounts, init, x=self.tt)
+        fit = nlm.eval(x=tt)
+        dcount = nlm.eval_uncertainty(sigma=0.95)
+        self.ax.plot(tt, fit, '-k', lw=2, label='Fit')
+        self.ax.plot(tt, fit+dcount, '--k', label='95% confidence band')
+        self.ax.plot(tt, fit-dcount, '--k')
+        self.ax.legend()
+        a = nlm.params['c'].value
+        n0 = nlm.params['amplitude'].value
+        tau = nlm.params['decay'].value
+        delta_a = nlm.params['c'].stderr
+        delta_n0 = nlm.params['amplitude'].stderr
+        delta_tau = nlm.params['decay'].stderr
+        t_a = a / delta_a
+        t_n0 = n0 / delta_n0
+        t_tau = tau / delta_tau
+        tdof = data.Counts.size - 3
+        p_a = 2 * (1 - stats.t.cdf(t_a, tdof))
+        p_n0 = 2 * (1 - stats.t.cdf(t_n0, tdof))
+        p_tau = 2 * (1 - stats.t.cdf(t_tau, tdof))
+        fitparams = pd.DataFrame({
+            'Estimate': [a, n0, tau], 
+            'Std Error': [
+                nlm.params['c'].stderr,
+                nlm.params['amplitude'].stderr,
+                nlm.params['decay'].stderr
+            ], 
+            'T Value': [t_a, t_n0, t_tau], 
+            'DOF': [tdof, tdof, tdof], 
+            'P(>|T|)': [p_a, p_n0, p_tau]
+        }, index=['a', 'n0', 'tau'])
+        
 
     def confirm_quit(self):
-        if tk.messagebox.askokcancel('Quit', 'Do you really want to exit?'):
+        if tk.messagebox.askokcancel('Quit', 'Do you really want to quit?'):
             self.root.destroy()
 
 def getports():
