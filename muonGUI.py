@@ -11,6 +11,7 @@ import threading
 import time
 import tkinter as tk
 import tkinter.filedialog as filedialog
+from tkinter.ttk import Treeview
 
 from matplotlib.backends.backend_tkagg import (
     FigureCanvasTkAgg, NavigationToolbar2Tk)
@@ -41,6 +42,8 @@ class MuonApp:
         self.root.protocol('WM_DELETE_WINDOW', self.confirm_quit)
         # Define detection parameters
         self.outfname = 'muon_data.txt'
+        self.figfname = 'muon_histogram.pdf'
+        self.fitfname = 'muon_fit_parameters.csv'
         self.appnd = tk.BooleanVar()
         self.appnd.set(False)
         
@@ -62,7 +65,7 @@ class MuonApp:
         self.ax.set_xlabel(r'Time ($\mu$s)')
         self.ax.set_ylabel('Counts')
         self.bins = np.arange(0, 21, 1)
-        self.tt = (bins[1:] + bins[0:-1]) / 2
+        self.tt = (self.bins[1:] + self.bins[0:-1]) / 2
         self.counts = np.array([], dtype=int)
         self.canvas = FigureCanvasTkAgg(self.fig, master=root)
         self.canvas.get_tk_widget().pack()
@@ -77,8 +80,10 @@ class MuonApp:
         self.fitbutton = tk.Button(controls, text='Fit',
             command=self.fit, state='disabled')
         self.fitbutton.pack(side=tk.LEFT, padx=5)
-        self.savefigbutton(controls, text='Save Histogram',
-            command=self.savefig, state='disabled')
+        self.savefigbutton = tk.Button(controls, 
+            text='Save Histogram', command=self.savefig,
+            state='disabled')
+        self.savefigbutton.pack(side=tk.LEFT, padx=5)
         self.quitbutton = tk.Button(controls, text="Quit",
             command=self.confirm_quit)
         self.quitbutton.pack(side=tk.RIGHT, padx=5)
@@ -224,17 +229,22 @@ class MuonApp:
         self.root.after(100, self.update_histogram)
     
     def fit(self):
+        nn = np.sum(self.bincounts)
+        if nn == 0:
+            messagebox.showerror("Error", "No data to fit.")
+            self.root.focus_force()
+            return
         muondecay = ExponentialModel()
         bg = ConstantModel()
         model = muondecay + bg
         init = bg.make_params(c=self.bincounts[-1])
-        init += muon.make_params(amplitude=100, decay=1.67)
+        init += muondecay.make_params(amplitude=100, decay=1.67)
         nlm = model.fit(self.bincounts, init, x=self.tt)
-        fit = nlm.eval(x=tt)
+        fit = nlm.eval(x=self.tt)
         dcount = nlm.eval_uncertainty(sigma=0.95)
-        self.ax.plot(tt, fit, '-k', lw=2, label='Fit')
-        self.ax.plot(tt, fit+dcount, '--k', label='95% confidence band')
-        self.ax.plot(tt, fit-dcount, '--k')
+        self.ax.plot(self.tt, fit, '-k', lw=2, label='Fit')
+        self.ax.plot(self.tt, fit+dcount, '--k', label='95% confidence band')
+        self.ax.plot(self.tt, fit-dcount, '--k')
         self.ax.legend()
         a = nlm.params['c'].value
         n0 = nlm.params['amplitude'].value
@@ -245,26 +255,106 @@ class MuonApp:
         t_a = a / delta_a
         t_n0 = n0 / delta_n0
         t_tau = tau / delta_tau
-        tdof = data.Counts.size - 3
+        tdof = self.bincounts.size - 3
         p_a = 2 * (1 - stats.t.cdf(t_a, tdof))
         p_n0 = 2 * (1 - stats.t.cdf(t_n0, tdof))
         p_tau = 2 * (1 - stats.t.cdf(t_tau, tdof))
-        fitparams = pd.DataFrame({
-            'Estimate': [a, n0, tau], 
-            'Std Error': [
-                nlm.params['c'].stderr,
-                nlm.params['amplitude'].stderr,
-                nlm.params['decay'].stderr
-            ], 
-            'T Value': [t_a, t_n0, t_tau], 
-            'DOF': [tdof, tdof, tdof], 
-            'P(>|T|)': [p_a, p_n0, p_tau]
-        }, index=['a', 'n0', 'tau'])
+        norm = n0 * tau * (1 - np.exp(-20/tau)) + 20 * a
+        ek = np.zeros(self.bins.size - 1)
+        nn = np.sum(self.bincounts)
+        for n in range(self.bins.size - 1):
+            t0 = self.bins[n]
+            t1 = self.bins[n+1]
+            ek[n] = ((n0 * tau * (np.exp(-t0/tau) - np.exp(-t1/tau))
+                + a*(t1 - t0)) / norm * nn)
+        self.dof = self.bincounts.size - len(nlm.params) - 1
+        self.chisq = stats.chisquare(self.bincounts, ek,
+            ddof=len(nlm.params))
+        self.fit_win = tk.Toplevel(self.root)
+        self.fit_win.title("Fit Parameters and Analysis")
+        data_frame = tk.Frame(self.fit_win)
+        data_frame.pack(fill='y')
+        tk.Label(data_frame, 
+            text=f'Time: {time.strftime('%Y-%m-%dT%H:%M:%S')}').pack(side='left')
+        tk.Label(data_frame, text='N decays: '
+            + f'{nn}').pack(side='left')
+        fit_frame = tk.Frame(self.fit_win)
+        fit_frame.pack(fill='y')
+        tk.Label(fit_frame, text='Fit method: ' +
+            nlm.method).pack(side='left')
+        tk.Label(fit_frame, 
+            text=f'R-squared: {nlm.rsquared}').pack(side='left')
+        columns = ('Parameter', 'Estimate', 'Std Error', 'T Value',
+            'DOF', 'P(>|T|)')
+        tree = Treeview(fit_frame, columns=columns, show='headings')
+        tree.pack(fill='both', expand=True)
+        for col in columns:
+            tree.heading(col, text=col)
+            tree.column(col, width=18, anchor="center")
+        self.fit_table = [
+            ('a', a, delta_a, t_a, p_a),
+            ('n0', n0, delta_n0, t_n0, p_n0),
+            ('tau', tau, delta_tau, t_tau, p_tau)
+        ]
+        for row in self.fit_table:
+            tree.insert('', tk.END, values=row)
+        tk.Label(fit_frame, 
+            text=f'chi-squared: {self.chisq.statistic}').pack(side='left')
+        tk.Label(fit_frame, text=f'DOF: {self.dof}').pack(side='left')
+        tk.Label(fit_frame, 
+            text=f'P(>chi-sq): {self.chisq.pvalue}').pack(side='left')
+        button_frame = tk.Frame(self.fit_win)
+        button_frame.pack(fill='x')
+        tk.Button(button_frame, text='Save Fit Parameters',
+            command=self.savefit).pack(side=tk.LEFT, padx=5)
+        self.root.focus_force()
+        tk.Button(button_frame, text='Close',
+            command=self.fit_win.destroy())
+    
+    def savefig(self):
+        if os.path.dirname(self.figfname):
+            idir = os.path.dirname(self.figfname)
+        else:
+            idir = os.curdir
+        self.figfname = filedialog.asksaveasfilename(initialdir=idir,
+            initialfile=os.path.basename(self.figfname))
+        self.fig.savefig(self.figfname, dpi=300)
         
+    def savefit(self):
+        if os.path.dirname(self.fitfname):
+            idir = os.path.dirname(self.fitfname)
+        else:
+            idir = os.curdir
+        self.fitfname = filedialog.asksaveasfilename(initialdir=idir,
+            initialfile=os.path.basename(self.fitfname))
+        self.fig.savefig(self.fitfname, dpi=300)
+        with open(fitfname) as fitfile:
+            np.savetxt(fitfile, 
+                ('Time', time.strftime('%Y-%m-%dT%H:%M:%S')), 
+                fmt=('%s', '%s'), delimiter=',')                
+            np.savetxt(fitfile, ('Ndecays', np.sum(self.bincounts)),
+                fmt=('%s', '%d'), delimiter=',')
+            np.savetxt(fitfile, 'Fit Parameters', fmt='%s')
+            np.savetxt(fitfile, ('Parameter', 'Estimate', 
+                'Std Error', 'T Value', 'DOF', 'P(>|T|)'), fmt='%s',
+                delimiter=',')
+            np.savetxt(fitfile, self.fit_table, fmt=('%s', '%g',
+                '%g', '%g', '%g'), delimiter=',')
+            np.savetxt(fitfile, 'Chi-squared analysis', fmt='%s')
+            np.savetxt(fitfile, ('chi-squared',
+                self.chisq.statistic), fmt=('%s', '%g'),
+                delimiter=',')
+            np.savetxt(fitfile, ('DOF', self.dof), fmt=('%s', '%d'),
+                delimiter=',')
+            np.savetxt(fitfile, ('P(>chi-sq)', self.chisq.pvalue),
+                fmt=('%s', '%g'), delimiter=',')
+    
 
     def confirm_quit(self):
-        if tk.messagebox.askokcancel('Quit', 'Do you really want to quit?'):
+        if tk.messagebox.askokcancel('Quit', 
+            'Do you really want to quit?'):
             self.root.destroy()
+            
 
 def getports():
     """Returns an array of available ports with the ports containing
