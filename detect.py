@@ -152,7 +152,7 @@ def detect_queue(port, data_queue, outfile='muondata.txt', appnd=False, sampleti
     
     USAGE
     
-    muon_count, decay_count, etime = detect_queue(port, data_queue,
+    detect_queue(port, data_queue,
         outfile='muondata.txt', fmode='w', sampletime=0, ndecays=0,
         killswitch=None)
 
@@ -172,18 +172,6 @@ def detect_queue(port, data_queue, outfile='muondata.txt', appnd=False, sampleti
         multiprocessing.Value object, setting of killswitch.value = 0 in
         another process will stop execution. This parameter is ignored
         if killswitch is None. (default: None)
-    
-    RETURNS
-    
-    muon_count: total number of muons passing through the detector
-        during execution. Note that if the data are appended to a file,
-        the file may contain additional muon counts.
-    decay_count: total number of muons decays detected during execution.
-        Note that if the data are appended to a file, the file may
-        contain additional muon decays.
-    etime: The total sampling time during execution. Note that if the
-        data are appended to a file, this time does not include the time
-        for any previous samples.
     """
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.INFO)
