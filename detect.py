@@ -143,7 +143,7 @@ def detect(port, outfile='muondata.txt', appnd=False, sampletime=0,
                     reading = False
     return muon_count, decay_count, etime
 
-def detect_queue(port, data_queue, outfile='muondata.txt', appnd=False, sampletime=0,
+def detect_queue(port, data_queue, control_queue, outfile='muondata.txt', appnd=False, sampletime=0,
     ndecays=0, killswitch=None):
     """Capture the output from TeachSpin's muon decay apparatus and save
     the results to an output file with the same format as the original
@@ -185,7 +185,8 @@ def detect_queue(port, data_queue, outfile='muondata.txt', appnd=False, sampleti
         ndecays = 1000000 # Default maximum number of decays
     if sampletime == 0:
         sampletime = 7 * 24 * 3600 # Default maximum sample time 1 week
-    reading = True
+    running = True
+    paused = False
     decay_count = 0
     muon_count = 0
     # Define the regex substitution string to eliminate groups of less
@@ -197,9 +198,22 @@ def detect_queue(port, data_queue, outfile='muondata.txt', appnd=False, sampleti
     with open(outfile, fmode) as output:
         detector = serial.Serial(port, baudrate=115200, timeout=1)
         t0 = time.time()
-        while reading:
+        while running:
+            # See if we are paused or stopped
+            try:
+                cmd = control_queue.get_nowait()
+                if cmd == 'pause':
+                    paused = True
+                elif cmd == 'resume':
+                    paused == false
+                elif cmd == 'stop':
+                    running = False
+            except Empty:
+                pass
+            if paused:
+                time.sleep(0.1)
+                continue
             rawdata=detector.read(1024)
-            tstamp = time.time()
             # The following command first eliminates samples that do not
             # contain three digits and then eliminates the return and
             # newline characters of the result.
@@ -208,6 +222,7 @@ def detect_queue(port, data_queue, outfile='muondata.txt', appnd=False, sampleti
                 b'', 
                 re.sub(ex_3_digit, b'', rawdata)
             )
+            tstamp = time.time()
             try:
                 data0x = np.frombuffer(datab, dtype='|S3')
             except ValueError:
@@ -257,9 +272,6 @@ def detect_queue(port, data_queue, outfile='muondata.txt', appnd=False, sampleti
             etime = tstamp - t0
             if decay_count >= ndecays or etime >= sampletime:
                 reading = False
-            if killswitch:
-                if killswitch.value == False:
-                    reading = False
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description = 

@@ -34,6 +34,7 @@ logging.basicConfig()  # configure root handler
 class MuonApp:
     def __init__(self, root, q):
         self.root = root
+        self.root.protocol('WM_DELETE_WINDOW', self.confirm_quit)
         # Define detection parameters
         self.outfname = 'muon_data.txt'
         self.appnd = tk.BooleanVar()
@@ -47,6 +48,7 @@ class MuonApp:
         self.q = q
         self.paused = False
         self.data = deque()
+        self.control_q = queue.Queue()
         self.config_win = None
         # Figure for histogram
         self.fig = Figure(figsize=(8, 6), dpi=100)
@@ -59,10 +61,11 @@ class MuonApp:
         self.canvas.get_tk_widget().pack()
         controls = tk.Frame(root)
         controls.pack(pady=5)
-        tk.Button(controls, text="Configure", command=self.configure).pack(side=tk.LEFT, padx=5)
-        tk.Button(controls, text="Start", command=self.collect).pack(side=tk.LEFT, padx=5)
-        tk.Button(controls, text="Pause", command=self.pause).pack(side=tk.LEFT, padx=5)
-        tk.Button(controls, text="Resume", command=self.resume).pack(side=tk.LEFT, padx=5)
+        self.configbutton = tk.Button(controls, text="Configure",
+            command=self.configure).pack(side=tk.LEFT, padx=5)
+        self.startbutton = tk.Button(controls, text="Start",
+            command=self.collect).pack(side=tk.LEFT, padx=5)
+        self.quitbutton = tk.Button(controls, text="Quit", command=self.confirm_quit).pack(side=tk.RIGHT, padx=5)
         self.update_histogram()
     
     def configure(self):
@@ -159,18 +162,36 @@ class MuonApp:
             initialfile=os.path.basename(self.outfname))
         self.fname.set(os.path.relpath(self.outfname))
         
+    def collect(self): 
+        self.togglebutton()
+        threading.Thread(target=detect_queue, args=(self.port,
+            self.q, self.control_q), kwargs={'outfile':
+            'self.outfname', 'appnd': False, 'sampletime':
+            self.sampletime, 'ndecays': self.ndecays},
+            daemon=True).start()
 
-    def collect(self):
-        threading.Thread(target=detect_queue, args=(self.port, self.q),
-            kwargs={'outfile': 'self.outfname', 'appnd': False, 'sampletime':
-            self.sampletime, 'ndecays': self.ndecays}, daemon=True).start()
+    def togglebutton(self):
+        if self.startbutton.text == 'Start':
+            self.startbutton.config(text='Pause', command=self.pause)
+        elif self.startbutton.text == 'Pause':
+            self.startbutton.config(text='Resume', command=self.resume)
+        elif self.startbutton.text == 'Resume':
+            self.startbutton.config(text='Pause', command=self.pause)
           
     def pause(self):
+        self.control_q.put('pause')
         self.paused = True
+        self.togglebutton()
     
     def resume(self):
         self.paused = False
-    
+        self.control_q.put('resume')
+        self.togglebutton()
+
+    def stop(self):
+        self.control_q.put('stop')
+        self
+   
     def update_histogram(self):
         #logger.debug("update_histogram")
         if not self.paused:
@@ -188,6 +209,10 @@ class MuonApp:
             self.canvas.draw_idle()
 
         self.root.after(100, self.update_histogram)
+
+    def confirm_quit(self):
+        if tk.messagebox.askokcancel('Quit', 'Do you really want to exit?'):
+            self.root.destroy()
 
 def getports():
     """Returns an array of available ports with the ports containing
