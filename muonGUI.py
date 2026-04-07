@@ -169,8 +169,8 @@ class MuonApp:
         else:
             self.sampletime = dtchoice_var.get()
         self.port = self.portname.get()
-        text = f'port: {self.port}\noutfname: {self.outfname}\nsampletime: {self.sampletime}'
-        messagebox.showinfo('Success', text)
+#         text = f'port: {self.port}\noutfname: {self.outfname}\nsampletime: {self.sampletime}'
+#         messagebox.showinfo('Success', text)
         self.config_win.destroy()
             
     def outfile_dialog(self):
@@ -306,7 +306,6 @@ class MuonApp:
         button_frame.pack(fill='x')
         tk.Button(button_frame, text='Save Fit Parameters',
             command=self.savefit).pack(side=tk.LEFT, padx=5)
-        self.root.focus_force()
         tk.Button(button_frame, text='Close',
             command=self.fit_win.destroy())
     
