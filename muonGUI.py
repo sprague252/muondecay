@@ -25,7 +25,6 @@ from collections import deque
 from lmfit.models import ExponentialModel, ConstantModel
 # Need Statistical distributions (Student T and Chi square)
 import scipy.stats as stats 
-import pandas as pd
 
 from Muon.detect import detect_queue
 
@@ -187,7 +186,7 @@ class MuonApp:
         self.startbutton.config(text='Pause', command=self.pause)
         threading.Thread(target=detect_queue, args=(self.port,
             self.q, self.control_q), kwargs={'outfile':
-            'self.outfname', 'appnd': False, 'sampletime':
+            self.outfname, 'appnd': False, 'sampletime':
             self.sampletime, 'ndecays': self.ndecays},
             daemon=True).start()
           

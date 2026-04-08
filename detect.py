@@ -205,10 +205,10 @@ def detect_queue(port, data_queue, control_queue, outfile='muondata.txt', appnd=
                 if cmd == 'pause':
                     paused = True
                 elif cmd == 'resume':
-                    paused == false
+                    paused == False
                 elif cmd == 'stop':
                     running = False
-            except Empty:
+            except queue.Empty:
                 pass
             if paused:
                 time.sleep(0.1)
