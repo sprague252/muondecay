@@ -143,7 +143,8 @@ def detect(port, outfile='muondata.txt', appnd=False, sampletime=0,
                     reading = False
     return muon_count, decay_count, etime
 
-def detect_queue(port, data_queue, control_queue, outfile='muondata.txt', appnd=False, sampletime=0,
+def detect_queue(port, data_queue, control_queue,
+    outfile='muondata.txt', appnd=False, sampletime=0,
     ndecays=0, killswitch=None):
     """Capture the output from TeachSpin's muon decay apparatus and save
     the results to an output file with the same format as the original

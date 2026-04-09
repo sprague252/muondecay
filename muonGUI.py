@@ -46,10 +46,13 @@ class MuonApp:
         self.fitfname = 'muon_fit_parameters.csv'
         self.appnd = tk.BooleanVar()
         self.appnd.set(False)
-        
-        self.port = ("/dev/null")
+        self.usbports = getports()
+        if len(self.usbports) == 1:
+            self.port = self.usbports[0]
+        else:
+            self.port = ("/dev/null")
         self.nbins = 20
-        self.sampletime = 30
+        self.sampletime = 0
         self.ndecays = 0
         
         self.q = q
@@ -125,7 +128,7 @@ class MuonApp:
                 "Time", foreground="black")
             dt_frame.pack()
 
-            dtchoice_var = tk.IntVar(value=3600)
+            dtchoice_var = tk.IntVar(value=7*24*3600)
             dtother_var = tk.StringVar()
 
             def dton_choice_change():
@@ -170,8 +173,6 @@ class MuonApp:
         else:
             self.sampletime = dtchoice_var.get()
         self.port = self.portname.get()
-#         text = f'port: {self.port}\noutfname: {self.outfname}\nsampletime: {self.sampletime}'
-#         messagebox.showinfo('Success', text)
         self.config_win.destroy()
             
     def outfile_dialog(self):
@@ -269,9 +270,12 @@ class MuonApp:
             tree.heading(col, text=col)
             tree.column(col, width=64, anchor="center")
         self.fit_table = [
-            ('a', fit.a, fit.delta_a, fit.t_a, fit.t_dof, fit.p_a),
-            ('n0', fit.n0, fit.delta_n0, fit.t_n0, fit.t_dof, fit.p_n0),
-            ('tau', fit.tau, fit.delta_tau, fit.t_tau, fit.t_dof, fit.p_tau)
+            ('a', f'{fit.a:g}', f'{fit.delta_a:g}', f'{fit.t_a:g}',
+                f'{fit.t_dof:g}', f'{fit.p_a:g}'),
+            ('n0', f'{fit.n0:g}', f'{fit.delta_n0:g}',
+                f'{fit.t_n0:g}', f'{fit.t_dof:g}', f'{fit.p_n0:g}'),
+            ('tau', f'{fit.tau:g}', f'{fit.delta_tau:g}',
+                f'{fit.t_tau:g}', f'{fit.t_dof:g}', f'{fit.p_tau:g}')
         ]
         for row in self.fit_table:
             tree.insert('', tk.END, values=row)
@@ -305,7 +309,7 @@ class MuonApp:
             idir = os.curdir
         self.fitfname = filedialog.asksaveasfilename(initialdir=idir,
             initialfile=os.path.basename(self.fitfname))
-        with open(fitfname) as fitfile:
+        with open(fitfname, 'w') as fitfile:
             np.savetxt(fitfile, 
                 ('Time', time.strftime('%Y-%m-%dT%H:%M:%S')), 
                 fmt=('%s', '%s'), delimiter=',')                
@@ -329,7 +333,7 @@ class MuonApp:
                 fmt=('%s', '%g'), delimiter=',')
             np.savetxt(fitfile, ('DOF', fit.chisq_dof), fmt=('%s',
                 '%d'), delimiter=',')
-            np.savetxt(fitfile, ('P(>chi-sq)', fit.pchisq),
+            np.savetxt(fitfile, ('P(>chi-sq)', fit.p_chisq),
                 fmt=('%s', '%g'), delimiter=',')
 
     def confirm_quit(self):
