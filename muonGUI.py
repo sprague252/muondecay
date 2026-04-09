@@ -27,6 +27,7 @@ from lmfit.models import ExponentialModel, ConstantModel
 import scipy.stats as stats 
 
 from Muon.detect import detect_queue
+from Muon.analysis import FitResults, data_analysis
 
 import logging
 
@@ -233,42 +234,7 @@ class MuonApp:
             messagebox.showerror("Error", "No data to fit.")
             self.root.focus_force()
             return
-        muondecay = ExponentialModel()
-        bg = ConstantModel()
-        model = muondecay + bg
-        init = bg.make_params(c=self.bincounts[-1])
-        init += muondecay.make_params(amplitude=100, decay=1.67)
-        nlm = model.fit(self.bincounts, init, x=self.tt)
-        fit = nlm.eval(x=self.tt)
-        dcount = nlm.eval_uncertainty(sigma=0.95)
-        self.ax.plot(self.tt, fit, '-k', lw=2, label='Fit')
-        self.ax.plot(self.tt, fit+dcount, '--k', label='95% confidence band')
-        self.ax.plot(self.tt, fit-dcount, '--k')
-        self.ax.legend()
-        a = nlm.params['c'].value
-        n0 = nlm.params['amplitude'].value
-        tau = nlm.params['decay'].value
-        delta_a = nlm.params['c'].stderr
-        delta_n0 = nlm.params['amplitude'].stderr
-        delta_tau = nlm.params['decay'].stderr
-        t_a = a / delta_a
-        t_n0 = n0 / delta_n0
-        t_tau = tau / delta_tau
-        tdof = self.bincounts.size - 3
-        p_a = 2 * (1 - stats.t.cdf(t_a, tdof))
-        p_n0 = 2 * (1 - stats.t.cdf(t_n0, tdof))
-        p_tau = 2 * (1 - stats.t.cdf(t_tau, tdof))
-        norm = n0 * tau * (1 - np.exp(-20/tau)) + 20 * a
-        ek = np.zeros(self.bins.size - 1)
-        nn = np.sum(self.bincounts)
-        for n in range(self.bins.size - 1):
-            t0 = self.bins[n]
-            t1 = self.bins[n+1]
-            ek[n] = ((n0 * tau * (np.exp(-t0/tau) - np.exp(-t1/tau))
-                + a*(t1 - t0)) / norm * nn)
-        self.dof = self.bincounts.size - len(nlm.params) - 1
-        self.chisq = stats.chisquare(self.bincounts, ek,
-            ddof=len(nlm.params))
+        fit = data_analysis(self.data, bins=self.bins)
         self.fit_win = tk.Toplevel(self.root)
         self.fit_win.title("Fit Parameters and Analysis")
         data_frame = tk.Frame(self.fit_win)
@@ -279,10 +245,8 @@ class MuonApp:
             + f'{nn}').pack(side='left')
         fit_frame = tk.Frame(self.fit_win)
         fit_frame.pack(fill='y')
-        tk.Label(fit_frame, text='Fit method: ' +
-            nlm.method).pack(side='left')
         tk.Label(fit_frame, 
-            text=f'R-squared: {nlm.rsquared}').pack(side='left')
+            text=f'R-squared: {fit.rsquared}').pack(side='left')
         columns = ('Parameter', 'Estimate', 'Std Error', 'T Value',
             'DOF', 'P(>|T|)')
         tree = Treeview(fit_frame, columns=columns, show='headings')
@@ -291,23 +255,25 @@ class MuonApp:
             tree.heading(col, text=col)
             tree.column(col, width=18, anchor="center")
         self.fit_table = [
-            ('a', a, delta_a, t_a, p_a),
-            ('n0', n0, delta_n0, t_n0, p_n0),
-            ('tau', tau, delta_tau, t_tau, p_tau)
+            ('a', fit.a, fir.delta_a, fit.t_a, fit.p_a),
+            ('n0', fit.n0, fit.delta_n0, fit.t_n0, fit.p_n0),
+            ('tau', fit.tau, fit.delta_tau, fit.t_tau, fit.p_tau)
         ]
         for row in self.fit_table:
             tree.insert('', tk.END, values=row)
         tk.Label(fit_frame, 
-            text=f'chi-squared: {self.chisq.statistic}').pack(side='left')
-        tk.Label(fit_frame, text=f'DOF: {self.dof}').pack(side='left')
+            text=f'chi-squared: {fit.chisq}').pack(side='left')
+        tk.Label(fit_frame, text=f'DOF: {fit.chisq_dof}').pack(side='left')
         tk.Label(fit_frame, 
-            text=f'P(>chi-sq): {self.chisq.pvalue}').pack(side='left')
+            text=f'P(>chi-sq): {fit.p_chisq}').pack(side='left')
         button_frame = tk.Frame(self.fit_win)
         button_frame.pack(fill='x')
-        tk.Button(button_frame, text='Save Fit Parameters',
-            command=self.savefit).pack(side=tk.LEFT, padx=5)
-        tk.Button(button_frame, text='Close',
+        savefitbutton = tk.Button(button_frame, text='Save Fit Parameters',
+            command=lambda: self.savefit(fit))
+        savefitbutton.pack(side=tk.LEFT, padx=5)
+        closefitbutton = tk.Button(button_frame, text='Close',
             command=self.fit_win.destroy())
+        closefitbutton.pack(side=tk.RIGHT, padx=5))
     
     def savefig(self):
         if os.path.dirname(self.figfname):
@@ -318,7 +284,7 @@ class MuonApp:
             initialfile=os.path.basename(self.figfname))
         self.fig.savefig(self.figfname, dpi=300)
         
-    def savefit(self):
+    def savefit(self, fit):
         if os.path.dirname(self.fitfname):
             idir = os.path.dirname(self.fitfname)
         else:
@@ -336,17 +302,22 @@ class MuonApp:
             np.savetxt(fitfile, ('Parameter', 'Estimate', 
                 'Std Error', 'T Value', 'DOF', 'P(>|T|)'), fmt='%s',
                 delimiter=',')
-            np.savetxt(fitfile, self.fit_table, fmt=('%s', '%g',
-                '%g', '%g', '%g'), delimiter=',')
+            np.savetxt(fitfile, ("a", fit.a, fit.delta_a, fit.t_a,
+                fit.p_a), fmt=('%s', '%g', '%g', '%g', '%g'),
+                delimiter=',')
+            np.savetxt(fitfile, ("n0", fit.n0, fit.delta_n0,
+                fit.t_n0, fit.p_n0), fmt=('%s', '%g', '%g', '%g',
+                '%g'), delimiter=',')
+            np.savetxt(fitfile, ("tau", fit.tau, fit.delta_tau,
+                fit.t_tau, fit.p_tau), fmt=('%s', '%g', '%g', '%g',
+                '%g'), delimiter=',')
             np.savetxt(fitfile, 'Chi-squared analysis', fmt='%s')
-            np.savetxt(fitfile, ('chi-squared',
-                self.chisq.statistic), fmt=('%s', '%g'),
-                delimiter=',')
-            np.savetxt(fitfile, ('DOF', self.dof), fmt=('%s', '%d'),
-                delimiter=',')
-            np.savetxt(fitfile, ('P(>chi-sq)', self.chisq.pvalue),
+            np.savetxt(fitfile, ('chi-squared', fit.chisq),
                 fmt=('%s', '%g'), delimiter=',')
-    
+            np.savetxt(fitfile, ('DOF', fit.chisq_dof), fmt=('%s',
+                '%d'), delimiter=',')
+            np.savetxt(fitfile, ('P(>chi-sq)', fit.pchisq),
+                fmt=('%s', '%g'), delimiter=',')
 
     def confirm_quit(self):
         if tk.messagebox.askokcancel('Quit', 
