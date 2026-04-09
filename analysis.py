@@ -77,13 +77,14 @@ def decayfit(bins, bincounts, n00=100, tau0=1.67):
         t_dof (int): The number of degrees of freedom for the fit-parameter T-tests
         rsquared float: The R-squared value for the fit.
     """  
+    tt = (bins[1:] + bins[0:-1]) / 2
     muondecay = ExponentialModel()
     bg = ConstantModel()
     model = muondecay + bg
-    init = bg.make_params(c=self.bincounts[-1])
+    init = bg.make_params(c=bincounts[-1])
     init += muondecay.make_params(amplitude=n00, decay=tau0)
-    nlm = model.fit(self.bincounts, init, x=self.tt)
-    fit = nlm.eval(x=self.tt)
+    nlm = model.fit(bincounts, init, x=tt)
+    fit = nlm.eval(x=tt)
     dcount = nlm.eval_uncertainty(sigma=0.95)
     a = nlm.params['c'].value
     n0 = nlm.params['amplitude'].value
@@ -94,16 +95,16 @@ def decayfit(bins, bincounts, n00=100, tau0=1.67):
     t_a = a / delta_a
     t_n0 = n0 / delta_n0
     t_tau = tau / delta_tau
-    t_dof = self.bincounts.size - 3
-    p_a = 2 * (1 - stats.t.cdf(t_a, tdof))
-    p_n0 = 2 * (1 - stats.t.cdf(t_n0, tdof))
-    p_tau = 2 * (1 - stats.t.cdf(t_tau, tdof))
+    t_dof = bincounts.size - 3
+    p_a = 2 * (1 - stats.t.cdf(t_a, t_dof))
+    p_n0 = 2 * (1 - stats.t.cdf(t_n0, t_dof))
+    p_tau = 2 * (1 - stats.t.cdf(t_tau, t_dof))
     fit_table = np.array([
         [a, delta_a, t_a, p_a],
         [n0, delta_n0, t_n0, p_n0],
         [tau, delta_tau, t_tau, p_tau],
     ])
-    return(fit_table, t_dof, rsquared)
+    return(fit_table, t_dof, nlm.rsquared)
 
 def fit_chisq(bins, bincounts, a, n0, tau):
     """Do a chi-square analysis on the muon fit results.
@@ -123,23 +124,23 @@ def fit_chisq(bins, bincounts, a, n0, tau):
     chisq = stats.chisquare(bincounts, ek, ddof=3)
     return chisq, dof
 
-def data_analysis(data, bins=None, n00=100, tau0=1.67):
+def data_analysis(data, bins=[], n00=100, tau0=1.67):
     """Fit muon decay data and do a chi-square analysis of the result.
     The fit parameters and chi-square results are returned in a
     FitResults class named tuple with the following fields: a, delta_a,
     t_a, p_a, n0, delta_n0, t_n0, p_n0, tau, delta_tau, t_tau, p_tau,
     t_dof, chisq, p_chisq, and chisq_dof.
     """
-    if bins == None:
+    if len(bins) == 0:
         bins = np.arange(0, 21, 1)
-    bincounts, _ = np.hist(data, bins=bins)
+    bincounts, _ = np.histogram(data, bins=bins)
     fit_table, t_dof, rsquared = decayfit(bins, bincounts, n00, tau0)
     a, delta_a, t_a, p_a = fit_table[0]
     n0, delta_n0, t_n0, p_n0 = fit_table[1]
     tau, delta_tau, t_tau, p_tau = fit_table[2]
-    chisq, chi_dof = fit_chisq(bins, bincounts, a, n0, tau)
+    chisq, chisq_dof = fit_chisq(bins, bincounts, a, n0, tau)
     result = FitResults(a, delta_a, t_a, p_a, n0, delta_n0, t_n0,
-        p_n0, tau, delta_tau, t_tau, p_tau, t_dof, rquared, chisq.statistic,
-        p_chisq.pvalue, chisq_dof)
+        p_n0, tau, delta_tau, t_tau, p_tau, t_dof, rsquared, chisq.statistic,
+        chisq.pvalue, chisq_dof)
     return result
     

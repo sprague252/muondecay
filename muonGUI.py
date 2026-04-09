@@ -256,7 +256,7 @@ class MuonApp:
             tree.heading(col, text=col)
             tree.column(col, width=18, anchor="center")
         self.fit_table = [
-            ('a', fit.a, fir.delta_a, fit.t_a, fit.p_a),
+            ('a', fit.a, fit.delta_a, fit.t_a, fit.p_a),
             ('n0', fit.n0, fit.delta_n0, fit.t_n0, fit.p_n0),
             ('tau', fit.tau, fit.delta_tau, fit.t_tau, fit.p_tau)
         ]
@@ -273,7 +273,7 @@ class MuonApp:
             command=lambda: self.savefit(fit))
         savefitbutton.pack(side=tk.LEFT, padx=5)
         closefitbutton = tk.Button(button_frame, text='Close',
-            command=self.fit_win.destroy())
+            command=self.fit_win.destroy)
         closefitbutton.pack(side=tk.RIGHT, padx=5)
     
     def savefig(self):
