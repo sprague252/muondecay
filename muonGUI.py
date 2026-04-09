@@ -56,7 +56,7 @@ class MuonApp:
         self.ndecays = 0
         
         self.q = q
-        self.paused = False
+        self.paused = True
         self.data = deque()
         self.control_q = queue.Queue()
         self.config_win = None
@@ -73,6 +73,9 @@ class MuonApp:
         self.canvas.get_tk_widget().pack()
         controls = tk.Frame(root)
         controls.pack(pady=5)
+        self.loadbutton = tk.Button(controls, text="Load Data",
+            command=self.load_datafile)
+        self.loadbutton.pack(side=tk.LEFT, padx=5)
         self.configbutton = tk.Button(controls, text="Configure",
             command=self.configure)
         self.configbutton.pack(side=tk.LEFT, padx=5)
@@ -80,11 +83,10 @@ class MuonApp:
             command=self.collect)
         self.startbutton.pack(side=tk.LEFT, padx=5)
         self.fitbutton = tk.Button(controls, text='Fit',
-            command=self.fit, state='disabled')
+            command=self.fit)
         self.fitbutton.pack(side=tk.LEFT, padx=5)
         self.savefigbutton = tk.Button(controls, 
-            text='Save Histogram', command=self.savefig,
-            state='disabled')
+            text='Save Histogram', command=self.savefig)
         self.savefigbutton.pack(side=tk.LEFT, padx=5)
         self.quitbutton = tk.Button(controls, text="Quit",
             command=self.confirm_quit)
@@ -183,9 +185,40 @@ class MuonApp:
         self.outfname = filedialog.asksaveasfilename(initialdir=idir,
             initialfile=os.path.basename(self.outfname))
         self.fname.set(os.path.relpath(self.outfname))
+    
+    def load_datafile(self):
+        datafile = filedialog.askopenfilename(
+            title='Select a data file to load',
+            initialdir=os.curdir
+        )
+        if datafile:
+            if len(self.data) > 0:
+                apnd = messagebox.askyesno("Append data", 
+                    "Append file data to decay histogram?")
+            else:
+                apnd = True
+        else:
+            return               
+        filedata = np.loadtxt(datafile)
+        filedecays = filedata[:, 0][filedata[:, 0] < 20000] / 1000
+        if apnd:
+            self.data.extend(filedecays)
+        else:
+            self.data.clear()
+            self.data.extend(filedecays)
+        self.ax.clear()
+        self.bincounts, _, _ = self.ax.hist(self.data,
+            bins=self.bins, edgecolor="black", label='Data')
+        self.ax.set_title("Muon Decay Times")
+        self.ax.set_xlabel(r'Time ($\mu$s)')
+        self.ax.set_ylabel('Counts')
+        self.canvas.draw_idle()
         
-    def collect(self): 
+    def collect(self):
+        self.paused = False 
         self.startbutton.config(text='Pause', command=self.pause)
+        self.fitbutton.config(state='disabled')
+        self.savefigbutton.config(state='disabled')
         threading.Thread(target=detect_queue, args=(self.port,
             self.q, self.control_q), kwargs={'outfile':
             self.outfname, 'appnd': False, 'sampletime':
@@ -224,7 +257,6 @@ class MuonApp:
             self.ax.set_title("Muon Decay Times")
             self.ax.set_xlabel(r'Time ($\mu$s)')
             self.ax.set_ylabel('Counts')
-
             self.canvas.draw_idle()
 
         self.root.after(100, self.update_histogram)
@@ -270,12 +302,12 @@ class MuonApp:
             tree.heading(col, text=col)
             tree.column(col, width=64, anchor="center")
         self.fit_table = [
-            ('a', f'{fit.a:g}', f'{fit.delta_a:g}', f'{fit.t_a:g}',
-                f'{fit.t_dof:g}', f'{fit.p_a:g}'),
-            ('n0', f'{fit.n0:g}', f'{fit.delta_n0:g}',
-                f'{fit.t_n0:g}', f'{fit.t_dof:g}', f'{fit.p_n0:g}'),
-            ('tau', f'{fit.tau:g}', f'{fit.delta_tau:g}',
-                f'{fit.t_tau:g}', f'{fit.t_dof:g}', f'{fit.p_tau:g}')
+            ('a', f'{fit.a:.3g}', f'{fit.delta_a:.3g}', f'{fit.t_a:.3g}',
+                f'{fit.t_dof:g}', f'{fit.p_a:.2g}'),
+            ('n0', f'{fit.n0:.3g}', f'{fit.delta_n0:.3g}',
+                f'{fit.t_n0:.3g}', f'{fit.t_dof:g}', f'{fit.p_n0:.3g}'),
+            ('tau', f'{fit.tau:.4g}', f'{fit.delta_tau:.4g}',
+                f'{fit.t_tau:.3g}', f'{fit.t_dof:g}', f'{fit.p_tau:.3g}')
         ]
         for row in self.fit_table:
             tree.insert('', tk.END, values=row)
@@ -309,32 +341,34 @@ class MuonApp:
             idir = os.curdir
         self.fitfname = filedialog.asksaveasfilename(initialdir=idir,
             initialfile=os.path.basename(self.fitfname))
-        with open(fitfname, 'w') as fitfile:
+        with open(self.fitfname, 'w') as fitfile:
+            line = np.array([['Time', time.strftime('%Y-%m-%dT%H:%M:%S')]], dtype='object')
             np.savetxt(fitfile, 
-                ('Time', time.strftime('%Y-%m-%dT%H:%M:%S')), 
-                fmt=('%s', '%s'), delimiter=',')                
-            np.savetxt(fitfile, ('Ndecays', np.sum(self.bincounts)),
-                fmt=('%s', '%d'), delimiter=',')
-            np.savetxt(fitfile, 'Fit Parameters', fmt='%s')
-            np.savetxt(fitfile, ('Parameter', 'Estimate', 
-                'Std Error', 'T Value', 'DOF', 'P(>|T|)'), fmt='%s',
-                delimiter=',')
-            np.savetxt(fitfile, ("a", fit.a, fit.delta_a, fit.t_a,
-                fit.p_a), fmt=('%s', '%g', '%g', '%g', '%g'),
-                delimiter=',')
-            np.savetxt(fitfile, ("n0", fit.n0, fit.delta_n0,
-                fit.t_n0, fit.p_n0), fmt=('%s', '%g', '%g', '%g',
-                '%g'), delimiter=',')
-            np.savetxt(fitfile, ("tau", fit.tau, fit.delta_tau,
-                fit.t_tau, fit.p_tau), fmt=('%s', '%g', '%g', '%g',
-                '%g'), delimiter=',')
-            np.savetxt(fitfile, 'Chi-squared analysis', fmt='%s')
-            np.savetxt(fitfile, ('chi-squared', fit.chisq),
-                fmt=('%s', '%g'), delimiter=',')
-            np.savetxt(fitfile, ('DOF', fit.chisq_dof), fmt=('%s',
-                '%d'), delimiter=',')
-            np.savetxt(fitfile, ('P(>chi-sq)', fit.p_chisq),
-                fmt=('%s', '%g'), delimiter=',')
+                line, fmt=['%s', '%s'], delimiter=',')    
+            line = np.array([['Ndecays', np.sum(self.bincounts)]], 
+                dtype='object')           
+            np.savetxt(fitfile, line,
+                fmt=['%s', '%d'], delimiter=',')
+#             np.savetxt(fitfile, ['Fit Parameters'], fmt='%s')
+#             np.savetxt(fitfile, ['Parameter', 'Estimate', 
+#                 'Std Error', 'T Value', 'DOF', 'P(>|T|)'], fmt='%s',
+#                 delimiter=',')
+#             np.savetxt(fitfile, ["a", fit.a, fit.delta_a, fit.t_a,
+#                 fit.p_a], fmt=['%s', '%g', '%g', '%g', '%g'],
+#                 delimiter=',')
+#             np.savetxt(fitfile, ["n0", fit.n0, fit.delta_n0,
+#                 fit.t_n0, fit.p_n0], fmt=['%s', '%g', '%g', '%g',
+#                 '%g'], delimiter=',')
+#             np.savetxt(fitfile, ["tau", fit.tau, fit.delta_tau,
+#                 fit.t_tau, fit.p_tau], fmt=['%s', '%g', '%g', '%g',
+#                 '%g'], delimiter=',')
+#             np.savetxt(fitfile, ['Chi-squared analysis'], fmt='%s')
+#             np.savetxt(fitfile, ['chi-squared', fit.chisq],
+#                 fmt=['%s', '%g'], delimiter=',')
+#             np.savetxt(fitfile, ['DOF', fit.chisq_dof], fmt=['%s',
+#                 '%d'], delimiter=',')
+#             np.savetxt(fitfile, ['P(>chi-sq)', fit.p_chisq],
+#                 fmt=['%s', '%g'], delimiter=',')
 
     def confirm_quit(self):
         if tk.messagebox.askokcancel('Quit', 
