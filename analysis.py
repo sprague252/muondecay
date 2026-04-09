@@ -102,7 +102,7 @@ def decayfit(bins, bincounts, n00=100, tau0=1.67):
         [a, delta_a, t_a, p_a],
         [n0, delta_n0, t_n0, p_n0],
         [tau, delta_tau, t_tau, p_tau],
-    )
+    ])
     return(fit_table, t_dof, rsquared)
 
 def fit_chisq(bins, bincounts, a, n0, tau):
