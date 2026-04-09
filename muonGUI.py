@@ -236,6 +236,12 @@ class MuonApp:
             return
         tt = (self.bins[1:] + self.bins[0:-1]) / 2
         fit = data_analysis(self.data, bins=self.bins)
+        self.ax.clear()
+        self.ax.hist(self.data,
+            bins=self.bins, edgecolor="black", label='Data')
+        self.ax.set_title("Muon Decay Times")
+        self.ax.set_xlabel(r'Time ($\mu$s)')
+        self.ax.set_ylabel('Counts')
         self.ax.plot(tt, fit.fitcount, '-k', lw=2, label='Fit')
         self.ax.plot(tt, fit.fitcount + fit.dcount, '--k',
             label='95% confidence band')
@@ -245,37 +251,37 @@ class MuonApp:
         self.fit_win = tk.Toplevel(self.root)
         self.fit_win.title("Fit Parameters and Analysis")
         data_frame = tk.Frame(self.fit_win)
-        data_frame.pack(fill='y')
+        data_frame.pack()
         timelabel = tk.Label(data_frame, 
             text=f'Time: {time.strftime('%Y-%m-%dT%H:%M:%S')}')
         timelabel.pack()
         tk.Label(data_frame, text='N decays: '
             + f'{nn}').pack()
         fit_frame = tk.Frame(self.fit_win)
-        fit_frame.pack(fill='y')
+        fit_frame.pack()
         tk.Label(fit_frame, 
-            text=f'R-squared: {fit.rsquared}').pack(side='left')
+            text=f'R-squared: {fit.rsquared:g}').pack()
         columns = ('Parameter', 'Estimate', 'Std Error', 'T Value',
             'DOF', 'P(>|T|)')
         tree = Treeview(fit_frame, columns=columns, show='headings')
         tree.pack(fill='both', expand=True)
         for col in columns:
             tree.heading(col, text=col)
-            tree.column(col, width=18, anchor="center")
+            tree.column(col, width=64, anchor="center")
         self.fit_table = [
-            ('a', fit.a, fit.delta_a, fit.t_a, fit.p_a),
-            ('n0', fit.n0, fit.delta_n0, fit.t_n0, fit.p_n0),
-            ('tau', fit.tau, fit.delta_tau, fit.t_tau, fit.p_tau)
+            ('a', fit.a, fit.delta_a, fit.t_a, fit.t_dof, fit.p_a),
+            ('n0', fit.n0, fit.delta_n0, fit.t_n0, fit.t_dof, fit.p_n0),
+            ('tau', fit.tau, fit.delta_tau, fit.t_tau, fit.t_dof, fit.p_tau)
         ]
         for row in self.fit_table:
             tree.insert('', tk.END, values=row)
         tk.Label(fit_frame, 
-            text=f'chi-squared: {fit.chisq}').pack()
+            text=f'chi-squared: {fit.chisq:g}').pack()
         tk.Label(fit_frame, text=f'DOF: {fit.chisq_dof}').pack()
         tk.Label(fit_frame, 
-            text=f'P(>chi-sq): {fit.p_chisq}').pack()
+            text=f'P(>chi-sq): {fit.p_chisq:g}').pack()
         button_frame = tk.Frame(self.fit_win)
-        button_frame.pack(fill='x')
+        button_frame.pack()
         savefitbutton = tk.Button(button_frame, text='Save Fit Parameters',
             command=lambda: self.savefit(fit))
         savefitbutton.pack(side=tk.LEFT, padx=5)
@@ -299,7 +305,6 @@ class MuonApp:
             idir = os.curdir
         self.fitfname = filedialog.asksaveasfilename(initialdir=idir,
             initialfile=os.path.basename(self.fitfname))
-        self.fig.savefig(self.fitfname, dpi=300)
         with open(fitfname) as fitfile:
             np.savetxt(fitfile, 
                 ('Time', time.strftime('%Y-%m-%dT%H:%M:%S')), 
