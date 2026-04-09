@@ -87,6 +87,7 @@ class MuonApp:
         self.quitbutton = tk.Button(controls, text="Quit",
             command=self.confirm_quit)
         self.quitbutton.pack(side=tk.RIGHT, padx=5)
+        # self.root.state('zoomed')
         self.update_histogram()
     
     def configure(self):
@@ -273,7 +274,7 @@ class MuonApp:
         savefitbutton.pack(side=tk.LEFT, padx=5)
         closefitbutton = tk.Button(button_frame, text='Close',
             command=self.fit_win.destroy())
-        closefitbutton.pack(side=tk.RIGHT, padx=5))
+        closefitbutton.pack(side=tk.RIGHT, padx=5)
     
     def savefig(self):
         if os.path.dirname(self.figfname):
@@ -341,6 +342,9 @@ def getports():
     
 logger.debug("Starting")
 root = tk.Tk()
+# Need to set a minimum window size to make sure buttons show on all
+# platforms.
+root.minsize(width=800, height=640)
 root.title("Muon Decay Monitor")
 
 q = queue.Queue()    
