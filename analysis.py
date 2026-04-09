@@ -6,6 +6,33 @@ from lmfit.models import ExponentialModel, ConstantModel
 from typing import NamedTuple
 
 class FitResults(NamedTuple):
+    """
+    A NamedTupel that holds the results of the muon decay fit and
+    chi-squared analysis.
+    
+    Attributes:
+        a (float): Fit value of the constant noise rate
+            (decays/microsecond)
+        delta_a (float): Standard error of a
+        t_a (float): T-statistic of a
+        p_a (float): P-value of a (from T-test)
+        n0 (float): Fit value of the number of muons in the decaying
+            population
+        delta_n0 (float): Standard error of n0
+        t_n0 (float): T-statistic of n0
+        p_n0 (float): P-value of n0 (from T-test)
+        tau (float): Fit value of muon lifetime (microseconds)
+        delta_tau (float): Standard error of tau
+        t_tau (float): T-statistic of tau
+        p_tau (float): P-value of tau (from T-test)
+        t_dof (int): Number of degrees of freedom for the fit
+            parameter T-tests
+        rsquared (float): R-squared value for the fit
+        chisq (float): Chi-squared statistic for the fit
+        p_chisq (float): P-value from chi-squared test of the fit
+        chisq_dof (int): Number of degrees of freedom for chi-squared
+            test of the fit
+    """
     a: float
     delta_a: float
     t_a: float
@@ -19,6 +46,7 @@ class FitResults(NamedTuple):
     t_tau: float
     p_tau: float
     t_dof: int
+    rsquared: float
     chisq: float
     p_chisq: float
     chisq_dof: int
@@ -26,12 +54,34 @@ class FitResults(NamedTuple):
 def decayfit(bins, bincounts, n00=100, tau0=1.67):
     """Fit the decays in data to an exponential decay with constant
     noise and return the fit parameters.
-    """
+    
+    fit_table, t_dof, rsquared = decayfit(bins, bincounts[, n00=100,
+        tau0=1.67])
+        
+    Arguments
+        bins (array of numbers): the bin boundaries for the decay histogram
+            (see numpy.histogram)
+        bincounts (array of int): array of counts of decays in each
+            histogram bin
+        n00 (int, optional): initial guess for number of decaying
+            muons used in fit algorithm (default: 100)
+        tau0 (float, optional): initial guess for mean muon lifetime
+            value used in fit algorithm (default: 1.67)
+    
+    Returns
+        fit_table (3 by 4 numpy.array of float): each row is the fit
+            value, standard error, t-statistic, and p-value (from the
+            T-test) for the parameters a (noise rate), n0 (muon
+            population size), and tau (muon lifetime) with time units
+            in microseconds
+        t_dof (int): The number of degrees of freedom for the fit-parameter T-tests
+        rsquared float: The R-squared value for the fit.
+    """  
     muondecay = ExponentialModel()
     bg = ConstantModel()
     model = muondecay + bg
     init = bg.make_params(c=self.bincounts[-1])
-    init += muondecay.make_params(amplitude=100, decay=1.67)
+    init += muondecay.make_params(amplitude=n00, decay=tau0)
     nlm = model.fit(self.bincounts, init, x=self.tt)
     fit = nlm.eval(x=self.tt)
     dcount = nlm.eval_uncertainty(sigma=0.95)
@@ -53,10 +103,10 @@ def decayfit(bins, bincounts, n00=100, tau0=1.67):
         [n0, delta_n0, t_n0, p_n0],
         [tau, delta_tau, t_tau, p_tau],
     )
-    return(fit_table, t_dof)
+    return(fit_table, t_dof, rsquared)
 
 def fit_chisq(bins, bincounts, a, n0, tau):
-    """Do a chi-square analysis on the muon fir results.
+    """Do a chi-square analysis on the muon fit results.
     """
     norm = n0 * tau * (1 - np.exp(-20/tau)) + 20 * a
     ek = np.zeros(bins.size - 1)
@@ -83,13 +133,13 @@ def data_analysis(data, bins=None, n00=100, tau0=1.67):
     if bins == None:
         bins = np.arange(0, 21, 1)
     bincounts, _ = np.hist(data, bins=bins)
-    fit_table, t_dof = decayfit(bins, bincounts, n00, tau0)
+    fit_table, t_dof, rsquared = decayfit(bins, bincounts, n00, tau0)
     a, delta_a, t_a, p_a = fit_table[0]
     n0, delta_n0, t_n0, p_n0 = fit_table[1]
     tau, delta_tau, t_tau, p_tau = fit_table[2]
     chisq, chi_dof = fit_chisq(bins, bincounts, a, n0, tau)
     result = FitResults(a, delta_a, t_a, p_a, n0, delta_n0, t_n0,
-        p_n0, tau, delta_tau, t_tau, p_tau, t_dof, chisq, p_chisq,
-        chisq_dof)
+        p_n0, tau, delta_tau, t_tau, p_tau, t_dof, rquared, chisq.statistic,
+        p_chisq.pvalue, chisq_dof)
     return result
     
