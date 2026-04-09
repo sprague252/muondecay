@@ -47,6 +47,8 @@ class FitResults(NamedTuple):
     p_tau: float
     t_dof: int
     rsquared: float
+    fitcount: np.ndarray
+    dcount: np.ndarray
     chisq: float
     p_chisq: float
     chisq_dof: int
@@ -84,7 +86,7 @@ def decayfit(bins, bincounts, n00=100, tau0=1.67):
     init = bg.make_params(c=bincounts[-1])
     init += muondecay.make_params(amplitude=n00, decay=tau0)
     nlm = model.fit(bincounts, init, x=tt)
-    fit = nlm.eval(x=tt)
+    fitcount = nlm.eval(x=tt)
     dcount = nlm.eval_uncertainty(sigma=0.95)
     a = nlm.params['c'].value
     n0 = nlm.params['amplitude'].value
@@ -104,7 +106,7 @@ def decayfit(bins, bincounts, n00=100, tau0=1.67):
         [n0, delta_n0, t_n0, p_n0],
         [tau, delta_tau, t_tau, p_tau],
     ])
-    return(fit_table, t_dof, nlm.rsquared)
+    return(fit_table, t_dof, nlm.rsquared, fitcount, dcount)
 
 def fit_chisq(bins, bincounts, a, n0, tau):
     """Do a chi-square analysis on the muon fit results.
@@ -134,13 +136,14 @@ def data_analysis(data, bins=[], n00=100, tau0=1.67):
     if len(bins) == 0:
         bins = np.arange(0, 21, 1)
     bincounts, _ = np.histogram(data, bins=bins)
-    fit_table, t_dof, rsquared = decayfit(bins, bincounts, n00, tau0)
+    fit_table, t_dof, rsquared, fitcount, dcount = decayfit(bins,
+        bincounts, n00, tau0)
     a, delta_a, t_a, p_a = fit_table[0]
     n0, delta_n0, t_n0, p_n0 = fit_table[1]
     tau, delta_tau, t_tau, p_tau = fit_table[2]
     chisq, chisq_dof = fit_chisq(bins, bincounts, a, n0, tau)
     result = FitResults(a, delta_a, t_a, p_a, n0, delta_n0, t_n0,
-        p_n0, tau, delta_tau, t_tau, p_tau, t_dof, rsquared, chisq.statistic,
-        chisq.pvalue, chisq_dof)
+        p_n0, tau, delta_tau, t_tau, p_tau, t_dof, rsquared,
+        fitcount, dcount, chisq.statistic, chisq.pvalue, chisq_dof)
     return result
     
