@@ -65,7 +65,6 @@ class MuonApp:
         self.ax.set_xlabel(r'Time ($\mu$s)')
         self.ax.set_ylabel('Counts')
         self.bins = np.arange(0, 21, 1)
-        self.tt = (self.bins[1:] + self.bins[0:-1]) / 2
         self.counts = np.array([], dtype=int)
         self.canvas = FigureCanvasTkAgg(self.fig, master=root)
         self.canvas.get_tk_widget().pack()
@@ -235,15 +234,23 @@ class MuonApp:
             messagebox.showerror("Error", "No data to fit.")
             self.root.focus_force()
             return
+        tt = (self.bins[1:] + self.bins[0:-1]) / 2
         fit = data_analysis(self.data, bins=self.bins)
+        self.ax.plot(tt, fit.fitcount, '-k', lw=2, label='Fit')
+        self.ax.plot(tt, fit.fitcount + fit.dcount, '--k',
+            label='95% confidence band')
+        self.ax.plot(tt, fit.fitcount - fit.dcount, '--k')
+        self.ax.legend()
+        self.canvas.draw_idle()
         self.fit_win = tk.Toplevel(self.root)
         self.fit_win.title("Fit Parameters and Analysis")
         data_frame = tk.Frame(self.fit_win)
         data_frame.pack(fill='y')
-        tk.Label(data_frame, 
-            text=f'Time: {time.strftime('%Y-%m-%dT%H:%M:%S')}').pack(side='left')
+        timelabel = tk.Label(data_frame, 
+            text=f'Time: {time.strftime('%Y-%m-%dT%H:%M:%S')}')
+        timelabel.pack()
         tk.Label(data_frame, text='N decays: '
-            + f'{nn}').pack(side='left')
+            + f'{nn}').pack()
         fit_frame = tk.Frame(self.fit_win)
         fit_frame.pack(fill='y')
         tk.Label(fit_frame, 
@@ -263,10 +270,10 @@ class MuonApp:
         for row in self.fit_table:
             tree.insert('', tk.END, values=row)
         tk.Label(fit_frame, 
-            text=f'chi-squared: {fit.chisq}').pack(side='left')
-        tk.Label(fit_frame, text=f'DOF: {fit.chisq_dof}').pack(side='left')
+            text=f'chi-squared: {fit.chisq}').pack()
+        tk.Label(fit_frame, text=f'DOF: {fit.chisq_dof}').pack()
         tk.Label(fit_frame, 
-            text=f'P(>chi-sq): {fit.p_chisq}').pack(side='left')
+            text=f'P(>chi-sq): {fit.p_chisq}').pack()
         button_frame = tk.Frame(self.fit_win)
         button_frame.pack(fill='x')
         savefitbutton = tk.Button(button_frame, text='Save Fit Parameters',
