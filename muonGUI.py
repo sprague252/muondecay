@@ -59,6 +59,7 @@ class MuonApp:
         self.paused = True
         self.data = deque()
         self.rdata = deque(maxlen=20)
+        self.rdata.extend(np.zeros(20))
         self.control_q = queue.Queue()
         self.config_win = None
         # Figure for histogram
@@ -82,9 +83,9 @@ class MuonApp:
         self.rateframe.pack(padx=5, pady=5)
         self.rfig = Figure(figsize=(3, 2), dpi=100)
         self.rax = self.rfig.add_subplot(111)
+        self.rax.bar(range(20), self.rdata)
         self.rax.set_title("Detection Rate")
-        #self.rax.set_ylim([0, 20])
-        self.rax.set_xlabel('Time (s)')
+        self.rax.set_xlabel('Samples')
         self.rax.set_ylabel('Detections/s')        
         self.rcanvas = FigureCanvasTkAgg(self.rfig, master=self.rateframe)
         self.rfig.tight_layout()
@@ -286,22 +287,25 @@ class MuonApp:
         #logger.debug("update_histogram")
         if not self.paused:
             while not self.q.empty():
-                newdecays = self.q.get()
+                newdecays, newrate = self.q.get()
                 self.data.extend(newdecays)
+                self.rdata.append(newrate)
                 logger.debug('Data from q') 
                 logger.debug(f'newdecays: {newdecays}; data: {self.data}')
-            self.ax.clear()
-            self.bincounts, _, _ = self.ax.hist(self.data,
-                bins=self.bins, edgecolor="black", label='Data')
-            self.ax.set_title("Muon Decay Times")
-            self.ax.set_xlabel(r'Time ($\mu$s)')
-            self.ax.set_ylabel('Counts')
-            self.canvas.draw_idle()
-            self.rax.clear()
-            self.rax.hist(self.rates, edgecolor="black", label='Rates')
-            self.rfig.tight_layout()
-            self.rcanvas.draw_idle()
-
+                self.ax.clear()
+                self.bincounts, _, _ = self.ax.hist(self.data,
+                    bins=self.bins, edgecolor="black", label='Data')
+                self.ax.set_title("Muon Decay Times")
+                self.ax.set_xlabel(r'Time ($\mu$s)')
+                self.ax.set_ylabel('Counts')
+                self.canvas.draw_idle()
+                self.rax.clear()
+                self.rax.bar(range(20), self.rdata, edgecolor="black", label='Rates')
+                self.rax.set_title("Detection Rate")
+                self.rax.set_xlabel('Samples')
+                self.rax.set_ylabel('Detections/s')        
+                self.rfig.tight_layout()
+                self.rcanvas.draw_idle()
         self.root.after(100, self.update_histogram)
     
     def fit(self):
