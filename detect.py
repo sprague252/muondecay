@@ -183,9 +183,12 @@ def detect_queue(port, data_queue, control_queue,
     else:
         fmode = 'w'
     if ndecays == 0:
-        ndecays = 1000000 # Default maximum number of decays
+        # Default maximum number of decays (a lot)
+        ndecays = 100000000 
     if sampletime == 0:
-        sampletime = 7 * 24 * 3600 # Default maximum sample time 1 week
+        # Default maximum sample time 10^8 s (31.7 years), meaning it
+        # will run until the parent process quits or kills it.
+        sampletime = 100000000 
     running = True
     paused = False
     decay_count = 0
@@ -271,7 +274,8 @@ def detect_queue(port, data_queue, control_queue,
             output.flush()
             fsync(output.fileno())
             etime = tstamp - t0
-            if decay_count >= ndecays or etime >= sampletime:
+            if decay_count >= ndecays or (sampletime > 0 and etime >=
+                sampletime):
                 reading = False
 
 if __name__ == '__main__':
