@@ -444,7 +444,8 @@ def getports():
     for port in ports:
         devs = devs + [port.device]
     pattern = r'USB'
-    usbdevs = [dev for dev in devs if re.search(pattern, dev)]
+    usbdevs = [dev for dev in devs if re.search(pattern, dev,
+    	re.IGNORECASE)]
     if len(usbdevs) == 0:
         return devs
     return usbdevs
