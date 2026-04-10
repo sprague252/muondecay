@@ -243,11 +243,9 @@ def detect_queue(port, data_queue, control_queue,
             # Make an array of only decays and put it in the queue.
             decays = data_ns[data_ns < 20000] / 1000
             decay_count += decays.size
-            if decays.size > 0:
-                rate = muon_count / (tstamp - lasttime)
-                data_queue.put((decays, rate))
-                lasttime = tstamp
-                muon_count = 0
+            rate = data_ns.size / (tstamp - lasttime)
+            data_queue.put((decays, rate))
+            lasttime = tstamp
             timeouts = np.flip(np.argwhere(data_ns==20000).flatten())
             if timeouts.size > 0:
                 prev = timeouts[0]
