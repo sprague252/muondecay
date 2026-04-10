@@ -58,6 +58,7 @@ class MuonApp:
         self.q = q
         self.paused = True
         self.data = deque()
+        self.rdata = deque(maxlen=20)
         self.control_q = queue.Queue()
         self.config_win = None
         # Figure for histogram
@@ -69,16 +70,50 @@ class MuonApp:
         self.ax.set_ylabel('Counts')
         self.bins = np.arange(0, 21, 1)
         self.counts = np.array([], dtype=int)
-        self.canvas = FigureCanvasTkAgg(self.fig, master=root)
+        # Set up main window
+        self.monitorframe = tk.Frame(root)
+        self.monitorframe.pack()
+        # Left frame
+        self.leftframe = tk.Frame(self.monitorframe)
+        self.leftframe.pack(side=tk.LEFT)
+        # Rate frame
+        self.rateframe = tk.LabelFrame(self.leftframe,
+            text='Detection Rate Monitor', foreground="black")
+        self.rateframe.pack(padx=5, pady=5)
+        self.rfig = Figure(figsize=(3, 2), dpi=100)
+        self.rax = self.rfig.add_subplot(111)
+        self.rax.set_title("Detection Rate")
+        #self.rax.set_ylim([0, 20])
+        self.rax.set_xlabel('Time (s)')
+        self.rax.set_ylabel('Detections/s')        
+        self.rcanvas = FigureCanvasTkAgg(self.rfig, master=self.rateframe)
+        self.rfig.tight_layout()
+        self.rcanvas.get_tk_widget().pack(pady=5)
+        self.rcanvas.draw()
+        # Config frame
+        self.configframe = tk.LabelFrame(self.leftframe,
+            text='Configuration', foreground="black")
+        self.configframe.pack()
+        self.portlabel = tk.Label(self.configframe, 
+            text=f'Port: {self.port}')
+        self.portlabel.pack(anchor=tk.W)
+        self.outfilelabel = tk.Label(self.configframe, 
+            text=f'Output file: {self.outfname}')
+        self.outfilelabel.pack(anchor=tk.W)
+        self.configbutton = tk.Button(self.configframe, text="Configure",
+            command=self.configure)
+        self.configbutton.pack()
+        # Histogram frame
+        self.histframe = tk.Frame(self.monitorframe)
+        self.histframe.pack(side=tk.LEFT)
+        self.canvas = FigureCanvasTkAgg(self.fig, master=self.histframe)
         self.canvas.get_tk_widget().pack()
+        # Control frame
         controls = tk.Frame(root)
         controls.pack(pady=5)
         self.loadbutton = tk.Button(controls, text="Load Data",
             command=self.load_datafile)
         self.loadbutton.pack(side=tk.LEFT, padx=5)
-        self.configbutton = tk.Button(controls, text="Configure",
-            command=self.configure)
-        self.configbutton.pack(side=tk.LEFT, padx=5)
         self.startbutton = tk.Button(controls, text="Start",
             command=self.collect)
         self.startbutton.pack(side=tk.LEFT, padx=5)
@@ -174,6 +209,7 @@ class MuonApp:
         else:
             self.sampletime = dtchoice_var.get()
         self.port = self.portname.get()
+        self.portlabel.config(text=f'Port: {self.port}')
         self.config_win.destroy()
             
     def outfile_dialog(self):
@@ -183,7 +219,9 @@ class MuonApp:
             idir = os.curdir
         self.outfname = filedialog.asksaveasfilename(initialdir=idir,
             initialfile=os.path.basename(self.outfname))
-        self.fname.set(os.path.relpath(self.outfname))
+        outfile_rel = os.path.relpath(self.outfname)
+        self.fname.set(outfile_rel)
+        self.outfilelabel.config(text=f'Output file: {outfile_rel}')
     
     def load_datafile(self):
         datafile = filedialog.askopenfilename(
@@ -212,6 +250,7 @@ class MuonApp:
         self.ax.set_xlabel(r'Time ($\mu$s)')
         self.ax.set_ylabel('Counts')
         self.canvas.draw_idle()
+        self.rcanvas.draw_idle()
         
     def collect(self):
         self.paused = False 
@@ -258,6 +297,10 @@ class MuonApp:
             self.ax.set_xlabel(r'Time ($\mu$s)')
             self.ax.set_ylabel('Counts')
             self.canvas.draw_idle()
+            self.rax.clear()
+            self.rax.hist(self.rates, edgecolor="black", label='Rates')
+            self.rfig.tight_layout()
+            self.rcanvas.draw_idle()
 
         self.root.after(100, self.update_histogram)
     
