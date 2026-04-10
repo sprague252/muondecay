@@ -202,7 +202,7 @@ def detect_queue(port, data_queue, control_queue,
     with open(outfile, fmode) as output:
         detector = serial.Serial(port, baudrate=115200, timeout=1)
         t0 = time.time()
-        tstamp = t0
+        lasttime = t0
         while running:
             # See if we are paused or stopped
             try:
