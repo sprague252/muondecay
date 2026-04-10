@@ -210,7 +210,7 @@ def detect_queue(port, data_queue, control_queue,
                 if cmd == 'pause':
                     paused = True
                 elif cmd == 'resume':
-                    paused == False
+                    paused = False
                 elif cmd == 'stop':
                     running = False
             except queue.Empty:
