@@ -202,6 +202,7 @@ def detect_queue(port, data_queue, control_queue,
     with open(outfile, fmode) as output:
         detector = serial.Serial(port, baudrate=115200, timeout=1)
         t0 = time.time()
+        tstamp = t0
         while running:
             # See if we are paused or stopped
             try:
@@ -243,7 +244,10 @@ def detect_queue(port, data_queue, control_queue,
             decays = data_ns[data_ns < 20000] / 1000
             decay_count += decays.size
             if decays.size > 0:
-                data_queue.put(decays)
+                rate = muon_count / (tstamp - lasttime)
+                data_queue.put((decays, rate))
+                lasttime = tstamp
+                muon_count = 0
             timeouts = np.flip(np.argwhere(data_ns==20000).flatten())
             if timeouts.size > 0:
                 prev = timeouts[0]
