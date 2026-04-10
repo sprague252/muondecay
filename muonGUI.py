@@ -342,33 +342,43 @@ class MuonApp:
         self.fitfname = filedialog.asksaveasfilename(initialdir=idir,
             initialfile=os.path.basename(self.fitfname))
         with open(self.fitfname, 'w') as fitfile:
-            line = np.array([['Time', time.strftime('%Y-%m-%dT%H:%M:%S')]], dtype='object')
-            np.savetxt(fitfile, 
-                line, fmt=['%s', '%s'], delimiter=',')    
-            line = np.array([['Ndecays', np.sum(self.bincounts)]], 
-                dtype='object')           
-            np.savetxt(fitfile, line,
-                fmt=['%s', '%d'], delimiter=',')
-#             np.savetxt(fitfile, ['Fit Parameters'], fmt='%s')
-#             np.savetxt(fitfile, ['Parameter', 'Estimate', 
-#                 'Std Error', 'T Value', 'DOF', 'P(>|T|)'], fmt='%s',
-#                 delimiter=',')
-#             np.savetxt(fitfile, ["a", fit.a, fit.delta_a, fit.t_a,
-#                 fit.p_a], fmt=['%s', '%g', '%g', '%g', '%g'],
-#                 delimiter=',')
-#             np.savetxt(fitfile, ["n0", fit.n0, fit.delta_n0,
-#                 fit.t_n0, fit.p_n0], fmt=['%s', '%g', '%g', '%g',
-#                 '%g'], delimiter=',')
-#             np.savetxt(fitfile, ["tau", fit.tau, fit.delta_tau,
-#                 fit.t_tau, fit.p_tau], fmt=['%s', '%g', '%g', '%g',
-#                 '%g'], delimiter=',')
-#             np.savetxt(fitfile, ['Chi-squared analysis'], fmt='%s')
-#             np.savetxt(fitfile, ['chi-squared', fit.chisq],
-#                 fmt=['%s', '%g'], delimiter=',')
-#             np.savetxt(fitfile, ['DOF', fit.chisq_dof], fmt=['%s',
-#                 '%d'], delimiter=',')
-#             np.savetxt(fitfile, ['P(>chi-sq)', fit.p_chisq],
-#                 fmt=['%s', '%g'], delimiter=',')
+            line = np.array([['Time',
+                time.strftime('%Y-%m-%dT%H:%M:%S')]], dtype='object')
+            np.savetxt(fitfile, line, fmt='%s', delimiter=',')    
+            line = np.array([['Ndecays',
+                f'{np.sum(self.bincounts):g}']], dtype='object')                         
+            np.savetxt(fitfile, line, fmt='%s', delimiter=',')
+#             line = np.array([['Fit Parameters']], dtype='object')                         
+#             np.savetxt(fitfile, line, fmt='%s', delimiter=',')
+            line = np.array([['Parameter', 'Estimate', 'Std Error',
+                'T Value', 'DOF', 'P(>|T|)']], dtype='object')                                 
+            np.savetxt(fitfile, line, fmt='%s', delimiter=',',
+                header='\nFit Parameters')
+            line = np.array([["a", f'{fit.a:g}', f'{fit.delta_a:g}',
+                f'{fit.t_a:g}', f'{fit.t_dof:g}', f'{fit.p_a:g}']],
+                dtype='object')
+            np.savetxt(fitfile, line, fmt='%s', delimiter=',')
+            line = np.array([["n0", f'{fit.n0:g}',
+                f'{fit.delta_n0:g}', f'{fit.t_n0:g}',
+                f'{fit.t_dof:g}', f'{fit.p_n0:g}']], dtype='object')
+            np.savetxt(fitfile, line, fmt='%s', delimiter=',')
+            line = np.array([["tau", f'{fit.tau:g}',
+                f'{fit.delta_tau:g}', f'{fit.t_tau:g}',
+                f'{fit.t_dof:g}', f'{fit.p_tau:g}']], dtype='object')
+            np.savetxt(fitfile, line, fmt='%s', delimiter=',')
+#             line = np.array([['Chi-squared analysis']],
+#                 dtype='object')                         
+#             np.savetxt(fitfile, line, fmt='%s', delimiter=',')
+            line = np.array([['chi-squared', f'{fit.chisq:g}']],
+                dtype='object')                         
+            np.savetxt(fitfile, line, fmt='%s', delimiter=',',
+                header='\nChi-squared analysis')
+            line = np.array([['DOF', f'{fit.chisq_dof:g}']],
+                dtype='object')                         
+            np.savetxt(fitfile, line, fmt='%s', delimiter=',')
+            line = np.array([['P(>chi-sq)', f'{fit.p_chisq:g}']],
+                dtype='object')                         
+            np.savetxt(fitfile, line, fmt='%s', delimiter=',')
 
     def confirm_quit(self):
         if tk.messagebox.askokcancel('Quit', 
