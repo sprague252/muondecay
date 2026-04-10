@@ -130,7 +130,7 @@ class MuonApp:
                 "Time", foreground="black")
             dt_frame.pack()
 
-            dtchoice_var = tk.IntVar(value=7*24*3600)
+            dtchoice_var = tk.IntVar(value=0)
             dtother_var = tk.StringVar()
 
             def dton_choice_change():
@@ -141,9 +141,8 @@ class MuonApp:
                     dtother_entry.config(state="disabled")
                     dtother_var.set("")            
             
-            dttext = ['1 h', '1 d', '2 d', '7 d']
-            dtvals = [3600, 24 * 3600, 2 * 24 * 3600, 7 * 24 * 3600]
-
+            dttext = ['Run until program end', '1 h', '1 d', '2 d', '7 d']
+            dtvals = [0, 3600, 24 * 3600, 2 * 24 * 3600, 7 * 24 * 3600]
             for n in range(len(dtvals)):
                 tk.Radiobutton(dt_frame, text=dttext[n],
                     variable=dtchoice_var, value=dtvals[n],
@@ -219,9 +218,10 @@ class MuonApp:
         self.startbutton.config(text='Pause', command=self.pause)
         self.fitbutton.config(state='disabled')
         self.savefigbutton.config(state='disabled')
+        appnd = self.appnd.get()
         threading.Thread(target=detect_queue, args=(self.port,
             self.q, self.control_q), kwargs={'outfile':
-            self.outfname, 'appnd': False, 'sampletime':
+            self.outfname, 'appnd': appnd, 'sampletime':
             self.sampletime, 'ndecays': self.ndecays},
             daemon=True).start()
           
