@@ -24,10 +24,10 @@ dependencies = [
 dev = ["pytest", "build", "twine"]
 
 [project.scripts]
-muon_detect = "detect:main"
+muon_detect = "muon.detect:main"
 
 [project.gui-scripts]
-muon_detector = "muonGUI:main"
+muon_detector = "muon.muonGUI:main"
 
 [project.urls]
 Homepage = "https://github.com/sprague252/Muon/"
