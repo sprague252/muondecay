@@ -26,8 +26,8 @@ from lmfit.models import ExponentialModel, ConstantModel
 # Need Statistical distributions (Student T and Chi square)
 import scipy.stats as stats 
 
-from Muon.detect import detect_queue
-from Muon.analysis import FitResults, data_analysis
+from muon.detect import detect_queue
+from muon.analysis import FitResults, data_analysis
 
 import logging
 

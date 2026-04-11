@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 from matplotlib.widgets import Button
 from serial.tools.list_ports import comports
 
-from Muon.detect import detect
+from muon.detect import detect
 
 class controlpanel:
 
