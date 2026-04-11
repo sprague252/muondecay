@@ -117,11 +117,13 @@ def main():
 			# Control frame
 			controls = tk.Frame(root)
 			controls.pack(pady=5)
-			self.loadbutton = tk.Button(controls, text="Load Data
-				from File", command=self.load_datafile)
+			self.loadbutton = tk.Button(controls, 
+			    text="Load Data from File", 
+			    command=self.load_datafile)
 			self.loadbutton.pack(side=tk.LEFT, padx=5)
-			self.startbutton = tk.Button(controls, text="Start Data
-				Collection", command=self.collect)
+			self.startbutton = tk.Button(controls, 
+			    text="Start Data Collection", 
+			    command=self.collect)
 			self.startbutton.pack(side=tk.LEFT, padx=5)
 			self.fitbutton = tk.Button(controls, text='Fit Data',
 				command=self.fit)
