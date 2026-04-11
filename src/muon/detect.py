@@ -106,7 +106,7 @@ def detect(port, outfile='muondata.txt', appnd=False, sampletime=0,
             except ValueError:
                 logger.exception('ValueError occurred reading |S3 ...')
                 rdfname = ('rawdata_error' + 
-                    time.strftime('%Y-%m-%dT%H:%M:%S') + '.dat'
+                    time.strftime('%Y-%m-%dT%H:%M:%S') + '.dat')
                 with open(rdfname, 'bw') as rdf:
                     rdf.write(rawdata)
                 logger.exception('Rawdata written to file rawdata_error' 
@@ -238,7 +238,7 @@ def detect_queue(port, data_queue, control_queue,
             except ValueError:
                 logger.exception('ValueError occurred reading |S3 ...')
                 rdfname = ('rawdata_error' + 
-                    time.strftime('%Y-%m-%dT%H:%M:%S') + '.dat'
+                    time.strftime('%Y-%m-%dT%H:%M:%S') + '.dat')
                 with open(rdfname, 'bw') as rdf:
                     rdf.write(rawdata)
                 logger.exception('Rawdata written to file rawdata_error' 
