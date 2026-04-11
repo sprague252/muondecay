@@ -105,7 +105,7 @@ def detect(port, outfile='muondata.txt', appnd=False, sampletime=0,
                 data0x = np.frombuffer(datab, dtype='|S3')
             except ValueError:
                 logger.exception('ValueError occurred reading |S3 ...')
-                rdfname = ',(rawdata_error' + 
+                rdfname = ('rawdata_error' + 
                     time.strftime('%Y-%m-%dT%H:%M:%S') + '.dat'
                 with open(rdfname, 'bw') as rdf:
                     rdf.write(rawdata)
@@ -237,7 +237,7 @@ def detect_queue(port, data_queue, control_queue,
                 data0x = np.frombuffer(datab, dtype='|S3')
             except ValueError:
                 logger.exception('ValueError occurred reading |S3 ...')
-                rdfname = ',(rawdata_error' + 
+                rdfname = ('rawdata_error' + 
                     time.strftime('%Y-%m-%dT%H:%M:%S') + '.dat'
                 with open(rdfname, 'bw') as rdf:
                     rdf.write(rawdata)
