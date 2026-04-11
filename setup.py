@@ -143,10 +143,10 @@ setup(
     #
     # Similar to `install_requires` above, these must be valid existing
     # projects.
-    extras_require={  # Optional
-        "dev": ["check-manifest"],
-        "test": ["coverage"],
-    },
+    # extras_require={  # Optional
+    #     "dev": ["check-manifest"],
+    #     "test": ["coverage"],
+    # },
     # If there are data files included in your packages that need to be
     # installed, specify them here.
 #     package_data={  # Optional
@@ -154,11 +154,10 @@ setup(
 #     },
     # Entry points. The following would provide a command called `sample` which
     # executes the function `main` from this package when invoked:
-#     entry_points={  # Optional
-#         "console_scripts": [
-#             "sample=sample:main",
-#         ],
-#     },
+    entry_points={  # Optional
+        "console_scripts": ["muon_detect=detect:main"],
+        "gui_scripts": ["muon_detector = muonGUI:main"]
+    },
     # List additional URLs that are relevant to your project as a dict.
     #
     # This field corresponds to the "Project-URL" metadata fields:
