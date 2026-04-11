@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Read and analyze data from TeachSpin's muon detector."
 authors = [{ name = "Mark W. Sprague", email = "spraguem@ecu.edu" }]
 readme = "README.md"
-license = { file = "LICENSE.txt" }
+license = { file = "LICENSE" }
 requires-python = ">=3.10"
 dependencies = [
 	"numpy",
