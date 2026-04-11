@@ -70,6 +70,7 @@ def detect(port, outfile='muondata.txt', appnd=False, sampletime=0,
     logger = logging.getLogger(__name__)
     logger.setLevel(loglevel)
     logging.basicConfig()  # configure root handler    if appnd:
+    if appnd:
         fmode = 'a'
     else:
         fmode = 'w'
