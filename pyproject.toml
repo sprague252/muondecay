@@ -1,0 +1,27 @@
+[project]
+name = "muon"
+version = "0.1.0"
+description = "Read and analyze data from TeachSpin's muon detector."
+authors = [{ name = "Mark W. Sprague", email = "spraguem@ecu.edu" }]
+readme = "README.md"
+license = { file = "LICENSE.txt" }
+requires-python = ">=3.10"
+dependencies = [
+	"numpy",
+	"scipy",
+	"pyserial",
+	"lmfit",
+	"matplotlib",
+	"ipython"
+]
+
+[project.scripts]
+muon_detect = "detect:main"
+
+[project.gui-scripts]
+muon_detector = "muonGUI:main"
+
+[project.urls]
+Homepage = "https://github.com/sprague252/Muon/"
+Source = "https://github.com/sprague252/Muon/"
+"Bug Tracker" = "https://github.com/sprague252/Muon/issues"
