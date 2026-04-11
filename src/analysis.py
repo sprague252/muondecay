@@ -1,4 +1,4 @@
-"""This module provides the analysis function for muon decay data.
+"""This module provides the analysis functions for muon decay data.
 """
 import numpy as np
 import scipy.stats as stats
@@ -28,6 +28,10 @@ class FitResults(NamedTuple):
         t_dof (int): Number of degrees of freedom for the fit
             parameter T-tests
         rsquared (float): R-squared value for the fit
+        fitcount (np.ndarray): Numpy array with the fit function
+        	values for each bin
+		dcount (np.ndarray): Numpy array with the fit value 95%
+			confidence band width for each bin
         chisq (float): Chi-squared statistic for the fit
         p_chisq (float): P-value from chi-squared test of the fit
         chisq_dof (int): Number of degrees of freedom for chi-squared
