@@ -7,7 +7,12 @@ Python. Execute "detect.py --help" from the command line for a complete
 help message with command-line arguments or "help(detect.detect)" from
 within IPython (Jupyter) for a complete docstring of the detect
 function.
+
+The detect_queue function places the decay information on a queue and is
+designed for use with multithrading by muonGUI or another function. See 
+the muon_queue docstring for details.
 """
+
 import re
 import time
 import sys
@@ -22,7 +27,7 @@ import logging
 
 
 def detect(port, outfile='muondata.txt', appnd=False, sampletime=0,
-    ndecays=0, killswitch=None):
+    ndecays=0, killswitch=None, loglevel=logging.INFO):
     """Capture the output from TeachSpin's muon decay apparatus and save
     the results to an output file with the same format as the original
     'muon_detect.tcl' program provided by TeachSpin.
@@ -48,6 +53,7 @@ def detect(port, outfile='muondata.txt', appnd=False, sampletime=0,
         multiprocessing.Value object, setting of killswitch.value = 0 in
         another process will stop execution. This parameter is ignored
         if killswitch is None. (default: None)
+    loglevel: a logging level to use. (default: logging.INFO)
     
     RETURNS
     
@@ -61,7 +67,9 @@ def detect(port, outfile='muondata.txt', appnd=False, sampletime=0,
         data are appended to a file, this time does not include the time
         for any previous samples.
     """
-    if appnd:
+    logger = logging.getLogger(__name__)
+    logger.setLevel(loglevel)
+    logging.basicConfig()  # configure root handler    if appnd:
         fmode = 'a'
     else:
         fmode = 'w'
@@ -95,13 +103,14 @@ def detect(port, outfile='muondata.txt', appnd=False, sampletime=0,
             try:
                 data0x = np.frombuffer(datab, dtype='|S3')
             except ValueError:
-                print('ValueError occurred reading |S3 ...', file=sys.stderr)
-                rdf = open('rawdata_error' + str(int(tstamp)), 'bw')
-                rdf.write(rawdata)
-                rdf.close()
-                print('rawdata written to file rawdata_error' + str(int(tstamp)),
-                    file=sys.stderr)
-                print('Data not saved ...', file=sys.stderr)
+                logger.exception('ValueError occurred reading |S3 ...')
+                rdfname = ',(rawdata_error' + 
+                    time.strftime('%Y-%m-%dT%H:%M:%S') + '.dat'
+                with open(rdfname, 'bw') as rdf:
+                    rdf.write(rawdata)
+                logger.exception('Rawdata written to file rawdata_error' 
+                    + time.strftime('%Y-%m-%dT%H:%M:%S'))
+                logger.exception('Data not saved ...')
             data_ns = np.array([20 * int(n, 16) for n in data0x])
             muon_count += data_ns.size
             decay_count += data_ns[data_ns < 20000].size
@@ -144,7 +153,7 @@ def detect(port, outfile='muondata.txt', appnd=False, sampletime=0,
 
 def detect_queue(port, data_queue, control_queue,
     outfile='muondata.txt', appnd=False, sampletime=0,
-    ndecays=0, killswitch=None):
+    ndecays=0, loglevel=logging.INFO):
     """Capture the output from TeachSpin's muon decay apparatus and save
     the results to an output file with the same format as the original
     'muon_detect.tcl' program provided by TeachSpin. This version writes
@@ -168,13 +177,10 @@ def detect_queue(port, data_queue, control_queue,
         (default: 0)
     ndecays: target number of muon decays (0 for no target). Program
         ends once the target is met or exceeded. (default: 0)
-    killswitch: a parameter to stop execution. If defined as a
-        multiprocessing.Value object, setting of killswitch.value = 0 in
-        another process will stop execution. This parameter is ignored
-        if killswitch is None. (default: None)
+    loglevel: a logging level to use. (default: logging.INFO)
     """
     logger = logging.getLogger(__name__)
-    logger.setLevel(logging.INFO)
+    logger.setLevel(loglevel)
     logging.basicConfig()  # configure root handler
     logger.debug('Started detect_queue')
     if appnd:
@@ -226,17 +232,17 @@ def detect_queue(port, data_queue, control_queue,
                 b'', 
                 re.sub(ex_3_digit, b'', rawdata)
             )
-            tstamp = time.time()
             try:
                 data0x = np.frombuffer(datab, dtype='|S3')
             except ValueError:
-                print('ValueError occurred reading |S3 ...', file=sys.stderr)
-                rdf = open('rawdata_error' + str(int(tstamp)), 'bw')
-                rdf.write(rawdata)
-                rdf.close()
-                print('rawdata written to file rawdata_error' + str(int(tstamp)),
-                    file=sys.stderr)
-                print('Data not saved ...', file=sys.stderr)
+                logger.exception('ValueError occurred reading |S3 ...')
+                rdfname = ',(rawdata_error' + 
+                    time.strftime('%Y-%m-%dT%H:%M:%S') + '.dat'
+                with open(rdfname, 'bw') as rdf:
+                    rdf.write(rawdata)
+                logger.exception('Rawdata written to file rawdata_error' 
+                    + time.strftime('%Y-%m-%dT%H:%M:%S'))
+                logger.exception('Data not saved ...')
             data_ns = np.array([20 * int(n, 16) for n in data0x])
             muon_count += data_ns.size
             # Make an array of only decays and put it in the queue.
@@ -298,14 +304,14 @@ if __name__ == '__main__':
     parser.add_argument('port', 
         help='serial port (device) connected to the muon detector')
     args = parser.parse_args()
-
+        
     muon_count, decay_count, etime = detect(args.port,
         outfile=args.outfile, appnd=args.append,
         sampletime=args.sampletime, ndecays=args.ndecays)
     
     if args.summarize:
-        print('Muons detected: ', muon_count)
-        print('Decays detected: ', decay_count)
-        print('Sampling time (s): ', etime)
+        print(f'Muons detected: {muon_count}')
+        print(f'Decays detected: {decay_count}')
+        print(f'Sampling time (s): {etime}')
 
     sys.exit(0)
