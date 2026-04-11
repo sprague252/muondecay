@@ -230,9 +230,10 @@ def main():
 				idir = os.path.dirname(self.outfname)
 			else:
 				idir = os.curdir
-			self.outfname =
-				filedialog.asksaveasfilename(initialdir=idir,
-				initialfile=os.path.basename(self.outfname))
+			self.outfname = filedialog.asksaveasfilename(
+			    initialdir=idir,
+				initialfile=os.path.basename(self.outfname)
+			)
 			outfile_rel = os.path.relpath(self.outfname)
 			self.fname.set(outfile_rel)
 			self.outfilelabel.config(text='Output file: '
