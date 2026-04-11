@@ -11,7 +11,6 @@ function.
 import re
 import time
 import sys
-import time
 import argparse
 from os import fsync
 import queue
