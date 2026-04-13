@@ -286,7 +286,7 @@ def detect_queue(port, data_queue, control_queue,
                 sampletime):
                 reading = False
 
-if __name__ == '__main__':
+def main(args_list):
     parser = argparse.ArgumentParser(description = 
         ('Acquire data from the TeachSpin muon decay apparatus.'))
     parser.add_argument('-a', '--append', action='store_true',
@@ -304,7 +304,7 @@ if __name__ == '__main__':
         '(0 for default limit, 1 week)')
     parser.add_argument('port', 
         help='serial port (device) connected to the muon detector')
-    args = parser.parse_args()
+    args = parser.parse_args(args_list)
         
     muon_count, decay_count, etime = detect(args.port,
         outfile=args.outfile, appnd=args.append,
@@ -316,3 +316,6 @@ if __name__ == '__main__':
         print(f'Sampling time (s): {etime}')
 
     sys.exit(0)
+
+if __name__ == '__main__':
+    main(sys.argv[1:])
