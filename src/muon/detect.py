@@ -306,7 +306,7 @@ def main(argv=None):
         help='serial port (device) connected to the muon detector')
     if argv is None:
         argv=sys.argv[1:]
-    args = parser.parse_args(args_list)
+    args = parser.parse_args(argv)
         
     muon_count, decay_count, etime = detect(args.port,
         outfile=args.outfile, appnd=args.append,
