@@ -225,6 +225,7 @@ def detect_queue(port, data_queue, control_queue,
                 time.sleep(0.1)
                 continue
             rawdata=detector.read(1024)
+			tstamp = time.time()
             # The following command first eliminates samples that do not
             # contain three digits and then eliminates the return and
             # newline characters of the result.
