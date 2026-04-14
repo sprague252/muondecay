@@ -1,11 +1,11 @@
-# Muon
+# muon
 
 This is Python module to read and analyze data from TeachSpin's muon
 decay apparatus.
 
 Version 0.1
 
-# Modules 
+## Modules 
 
 * analysis - contains functions to analyze muon decay data with a 
 nonlinear fit and with a chi-squared test.
@@ -20,3 +20,9 @@ detection function.
 
 * MuonJupyter - a collection of functions to run muon detection from
 Jupyter Lab (or Jupyter Notebook).
+
+## Entry scripts
+
+* muon_detector - a gui-script to run muon.muonGYI.
+
+* muon_detect - a command-line script to run muon.detect.
