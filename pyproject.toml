@@ -4,7 +4,7 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "muon"
+name = "muondecay"
 version = "0.1.0"
 description = "Read and analyze data from TeachSpin's muon detector."
 authors = [{ name = "Mark W. Sprague", email = "spraguem@ecu.edu" }]
@@ -24,15 +24,15 @@ dependencies = [
 dev = ["pytest", "build", "twine"]
 
 [project.scripts]
-muon_detect = "muon.detect:main"
+muon_detect = "muondecay.detect:main"
 
 [project.gui-scripts]
-muon_detector = "muon.muonGUI:main"
+muon_detector = "muondecay.muonGUI:main"
 
 [project.urls]
-Homepage = "https://github.com/sprague252/Muon/"
-Source = "https://github.com/sprague252/Muon/"
-"Bug Tracker" = "https://github.com/sprague252/Muon/issues"
+Homepage = "https://github.com/sprague252/muondecay/"
+Source = "https://github.com/sprague252/muondecay/"
+"Bug Tracker" = "https://github.com/sprague252/muondecay/issues"
 
 
 [tool.setuptools]
