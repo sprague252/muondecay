@@ -3,7 +3,7 @@
 This is Python module to read and analyze data from TeachSpin's muon
 decay apparatus.
 
-Version 0.1.1
+Version 0.1.2
 
 ## Modules 
 
@@ -17,9 +17,6 @@ GUI. This module can be run on the command line as a standalone muon
 detection function.
 
 * muonGUI - a GUI interface to the muon detection functions.
-
-* MuonJupyter - a collection of functions to run muon detection from
-Jupyter Lab (or Jupyter Notebook).
 
 ## Entry scripts
 
