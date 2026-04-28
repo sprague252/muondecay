@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "muondecay"
-version = "0.1.3"
+version = "0.1.4"
 description = "Read and analyze data from TeachSpin's muon detector."
 authors = [{ name = "Mark W. Sprague", email = "spraguem@ecu.edu" }]
 readme = "README.md"
@@ -16,7 +16,8 @@ dependencies = [
 	"scipy",
 	"pyserial",
 	"lmfit",
-	"matplotlib"
+	"matplotlib",
+	"tk"
 ]
 
 [project.optional-dependencies]
