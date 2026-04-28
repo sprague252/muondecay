@@ -354,7 +354,7 @@ def main():
 			data_frame = tk.Frame(self.fit_win)
 			data_frame.pack()
 			timelabel = tk.Label(data_frame, 
-				text=f'Time: {time.strftime('%Y-%m-%dT%H:%M:%S')}')
+				text=f"Time: {time.strftime('%Y-%m-%dT%H:%M:%S')}")
 			timelabel.pack()
 			tk.Label(data_frame, text='N decays: '
 				+ f'{nn}').pack()
