@@ -3,7 +3,11 @@
 This is Python module to read and analyze data from TeachSpin's muon
 decay apparatus.
 
-Version 0.1.3
+Version 0.1.4
+
+## Installation
+
+`pip muondecay`
 
 ## Modules 
 
